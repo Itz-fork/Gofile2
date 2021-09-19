@@ -1,5 +1,5 @@
-# Re-built by Itz-fork
 # Original Author: Codec04
+# Re-built by Itz-fork
 # Project: Gofile2
 import requests
 
@@ -102,6 +102,8 @@ class Gofile:
             folderName - The name of the folder that wanted to create
         """
         token = self.token
+        if token is None:
+            raise Exception("TOKEN IS NOT DEFINED")
         folder_resp = requests.put(
             url=f"{self.api_url}createFolder",
             data={
@@ -128,6 +130,8 @@ class Gofile:
                      For "tags", must be a comma seperated list of tags.
         """
         token = self.token
+        if token is None:
+            raise Exception("TOKEN IS NOT DEFINED")
         set_folder_resp = requests.put(
             url=f"{self.api_url}setFolderOptions",
             data={
@@ -148,6 +152,8 @@ class Gofile:
             contentId - The ID of the file or folder
         """
         token = self.token
+        if token is None:
+            raise Exception("TOKEN IS NOT DEFINED")
         del_content_resp = requests.delete(
             url=f"{self.api_url}deleteContent",
             data={
