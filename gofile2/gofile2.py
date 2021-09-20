@@ -15,6 +15,12 @@ class Gofile:
     def __init__(self, token=None):
         self.api_url = "https://api.gofile.io/"
         self.token = token
+        if self.token is not None:
+            is_ok = self.get_Account(check_account=True)
+            if is_ok is False:
+                raise Exception("WRONG TOKEN")
+        else:
+            pass
     
     def _api_resp_handler(self, response):
         api_status = response["status"]
