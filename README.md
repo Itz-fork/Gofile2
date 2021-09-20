@@ -25,8 +25,14 @@ pip install git+https://github.com/Itz-fork/Gofile2.git
 
 # Usage
 **1. Import [Gofile2](https://github.com/Itz-fork/Gofile2) in your python file**
+
+**Synchronous version**
 ```python
 from gofile2 import Gofile
+```
+**Asynchronous version** (Sometimes unstable)
+```python
+from gofile2 import Async_Gofile
 ```
 
 **2. Create an instance of Gofile2**

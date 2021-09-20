@@ -2,7 +2,16 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import aiohttp
-from syncer import sync
+import requests
+
+# Function to check if token is valid or not (using request lib as this is just a sync function)
+def is_valid_token(url, token):
+    get_account_resp = requests.get(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
+    if get_account_resp["status"] == "error-wrongToken":
+        raise Exception("WRONG TOKEN")
+    else:
+        pass
+
 
 class Async_Gofile:
     """
@@ -18,13 +27,10 @@ class Async_Gofile:
         self.r_session = aiohttp.ClientSession()
         self.token = token
         if self.token is not None:
-            c_acc = sync(self.get_Account())
-            is_ok = c_acc(check_account=True)
-            if is_ok is False:
-                raise Exception("WRONG TOKEN")
-        else:
-            pass
-    
+            is_valid_token(url=self.api_url, token=self.token)
+
+    async def __close_session(self, session):
+        await session.close()
 
     async def _api_resp_handler(self, response):
         api_status = response["status"]
@@ -46,9 +52,14 @@ class Async_Gofile:
             None
         """
         async with self.r_session as session:
-            server_resp = await session.get(f"{self.api_url}getServer")
-            server_resp = await server_resp.json()
-            return await self._api_resp_handler(server_resp)
+            try:
+                server_resp = await session.get(f"{self.api_url}getServer")
+                server_resp = await server_resp.json()
+                await self.__close_session(session)
+                return await self._api_resp_handler(server_resp)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")
     
     async def get_Account(self, check_account=False):
         """
@@ -58,21 +69,23 @@ class Async_Gofile:
         Arguments:
             check_account (optional) - Boolean. Pass True to check if account exists or not. else it'll return all data of account
         """
-        token = self.token
-        if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
         async with self.r_session as session:
-            get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={token}&allDetails=true")
-            get_account_resp = await get_account_resp.json()
-            if check_account is True:
-                if get_account_resp["status"] == "ok":
-                    return True
-                elif get_account_resp["status"] == "error-wrongToken":
-                    return False
+            try:
+                get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true")
+                get_account_resp = await get_account_resp.json()
+                await self.__close_session(session)
+                if check_account is True:
+                    if get_account_resp["status"] == "ok":
+                        return True
+                    elif get_account_resp["status"] == "error-wrongToken":
+                        return False
+                    else:
+                        return await self._api_resp_handler(get_account_resp)
                 else:
                     return await self._api_resp_handler(get_account_resp)
-            else:
-                return await self._api_resp_handler(get_account_resp)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")
         
     async def upload(self,file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
         """
@@ -87,26 +100,30 @@ class Async_Gofile:
             tags (optional) - Tags for the folder. If multiple tags, seperate them with comma. Not applicable if you specify a folderId
             expire (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
         """
-        token = self.token
         server = self.get_Server()["server"]
         if password != None and len(password) < 4:
             raise Exception("passwordLength")
         
         async with self.r_session as session:
-            upload_file = await session.post(
-                url=f"https://{server}.gofile.io/uploadFile",
-                data={
-                    "token": token,
-                    "folderId": folderId,
-                    "description": description,
-                    "password": password,
-                    "tags": tags,
-                    "expire": expire
-                },
-                files={"upload_file": open(file, "rb")}
-            )
-            upload_file = await upload_file.json()
-            return await self._api_resp_handler(upload_file)
+            try:
+                upload_file = await session.post(
+                    url=f"https://{server}.gofile.io/uploadFile",
+                    data={
+                        "token": self.token,
+                        "folderId": folderId,
+                        "description": description,
+                        "password": password,
+                        "tags": tags,
+                        "expire": expire
+                    },
+                    files={"upload_file": open(file, "rb")}
+                )
+                upload_file = await upload_file.json()
+                await self.__close_session(session)
+                return await self._api_resp_handler(upload_file)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")
 
     async def create_folder(self, parentFolderId, folderName):
         """
@@ -117,20 +134,22 @@ class Async_Gofile:
             parentFolderId - The parent folder ID
             folderName - The name of the folder that wanted to create
         """
-        token = self.token
-        if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
         async with self.r_session as session:
-            folder_resp = await session.put(
-                url=f"{self.api_url}createFolder",
-                data={
-                    "parentFolderId": parentFolderId,
-                    "folderName": folderName,
-                    "token": token
-                }
-            )
-            folder_resp = await folder_resp.json()
-            return await self._api_resp_handler(folder_resp)
+            try:
+                folder_resp = await session.put(
+                    url=f"{self.api_url}createFolder",
+                    data={
+                        "parentFolderId": parentFolderId,
+                        "folderName": folderName,
+                        "token": self.token
+                    }
+                )
+                folder_resp = await folder_resp.json()
+                await self.__close_session(session)
+                return await self._api_resp_handler(folder_resp)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")
     
     async def set_folder_options(self, folderId, option, value):
         """
@@ -147,21 +166,23 @@ class Async_Gofile:
                      For "expire", must be the expiration date in the form of unix timestamp.
                      For "tags", must be a comma seperated list of tags.
         """
-        token = self.token
-        if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
         async with self.r_session as session:
-            set_folder_resp = await session.put(
-                url=f"{self.api_url}setFolderOptions",
-                data={
-                    "token": token,
-                    "folderId": folderId,
-                    "option": option,
-                    "value": value
-                }
-            )
-            set_folder_resp = await set_folder_resp.json()
-            return await self._api_resp_handler(set_folder_resp)
+            try:
+                set_folder_resp = await session.put(
+                    url=f"{self.api_url}setFolderOptions",
+                    data={
+                        "token": self.token,
+                        "folderId": folderId,
+                        "option": option,
+                        "value": value
+                    }
+                )
+                set_folder_resp = await set_folder_resp.json()
+                await self.__close_session(session)
+                return await self._api_resp_handler(set_folder_resp)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")
 
     async def delete_content(self, contentId):
         """
@@ -171,16 +192,18 @@ class Async_Gofile:
         Arguments:
             contentId - The ID of the file or folder
         """
-        token = self.token
-        if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
         async with self.r_session as session:
-            del_content_resp = await session.delete(
-                url=f"{self.api_url}deleteContent",
-                data={
-                    "contentId": contentId,
-                    "token": token
-                }
-            )
-            del_content_resp = await del_content_resp.json()
-            return await self._api_resp_handler(del_content_resp)
+            try:
+                del_content_resp = await session.delete(
+                    url=f"{self.api_url}deleteContent",
+                    data={
+                        "contentId": contentId,
+                        "token": self.token
+                    }
+                )
+                del_content_resp = await del_content_resp.json()
+                await self.__close_session(session)
+                return await self._api_resp_handler(del_content_resp)
+            except Exception as e:
+                await self.__close_session(session)
+                raise Exception(f"Cannot Continue due to: {e}")

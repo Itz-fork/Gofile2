@@ -41,8 +41,11 @@ class Gofile:
         Arguments:
             None
         """
-        server_resp = requests.get(f"{self.api_url}getServer").json()
-        return self._api_resp_handler(server_resp)
+        try:
+            server_resp = requests.get(f"{self.api_url}getServer").json()
+            return self._api_resp_handler(server_resp)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
     
     def get_Account(self, check_account=False):
         """
@@ -55,16 +58,19 @@ class Gofile:
         token = self.token
         if token is None:
             raise Exception("TOKEN IS NOT DEFINED")
-        get_account_resp = requests.get(url=f"{self.api_url}getAccountDetails?token={token}&allDetails=true").json()
-        if check_account is True:
-            if get_account_resp["status"] == "ok":
-                return True
-            elif get_account_resp["status"] == "error-wrongToken":
-                return False
+        try:
+            get_account_resp = requests.get(url=f"{self.api_url}getAccountDetails?token={token}&allDetails=true").json()
+            if check_account is True:
+                if get_account_resp["status"] == "ok":
+                    return True
+                elif get_account_resp["status"] == "error-wrongToken":
+                    return False
+                else:
+                    return self._api_resp_handler(get_account_resp)
             else:
                 return self._api_resp_handler(get_account_resp)
-        else:
-            return self._api_resp_handler(get_account_resp)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
         
     def upload(self,file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
         """
@@ -80,23 +86,26 @@ class Gofile:
             expire (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
         """
         token = self.token
-        server = self.get_Server()["server"]
         if password != None and len(password) < 4:
             raise Exception("passwordLength")
         
-        upload_file = requests.post(
-            url=f"https://{server}.gofile.io/uploadFile",
-            data={
-                "token": token,
-                "folderId": folderId,
-                "description": description,
-                "password": password,
-                "tags": tags,
-                "expire": expire
-            },
-            files={"upload_file": open(file, "rb")}
-        ).json()
-        return self._api_resp_handler(upload_file)
+        try:
+            server = self.get_Server()["server"]
+            upload_file = requests.post(
+                url=f"https://{server}.gofile.io/uploadFile",
+                data={
+                    "token": token,
+                    "folderId": folderId,
+                    "description": description,
+                    "password": password,
+                    "tags": tags,
+                    "expire": expire
+                },
+                files={"upload_file": open(file, "rb")}
+            ).json()
+            return self._api_resp_handler(upload_file)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
 
     def create_folder(self, parentFolderId, folderName):
         """
@@ -110,15 +119,18 @@ class Gofile:
         token = self.token
         if token is None:
             raise Exception("TOKEN IS NOT DEFINED")
-        folder_resp = requests.put(
-            url=f"{self.api_url}createFolder",
-            data={
-                "parentFolderId": parentFolderId,
-                "folderName": folderName,
-                "token": token
-            }
-        ).json()
-        return self._api_resp_handler(folder_resp)
+        try:
+            folder_resp = requests.put(
+                url=f"{self.api_url}createFolder",
+                data={
+                    "parentFolderId": parentFolderId,
+                    "folderName": folderName,
+                    "token": token
+                }
+            ).json()
+            return self._api_resp_handler(folder_resp)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
     
     def set_folder_options(self, folderId, option, value):
         """
@@ -138,16 +150,19 @@ class Gofile:
         token = self.token
         if token is None:
             raise Exception("TOKEN IS NOT DEFINED")
-        set_folder_resp = requests.put(
-            url=f"{self.api_url}setFolderOptions",
-            data={
-                "token": token,
-                "folderId": folderId,
-                "option": option,
-                "value": value
-            }
-        ).json()
-        return self._api_resp_handler(set_folder_resp)
+        try:
+            set_folder_resp = requests.put(
+                url=f"{self.api_url}setFolderOptions",
+                data={
+                    "token": token,
+                    "folderId": folderId,
+                    "option": option,
+                    "value": value
+                }
+            ).json()
+            return self._api_resp_handler(set_folder_resp)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
 
     def delete_content(self, contentId):
         """
@@ -160,11 +175,14 @@ class Gofile:
         token = self.token
         if token is None:
             raise Exception("TOKEN IS NOT DEFINED")
-        del_content_resp = requests.delete(
-            url=f"{self.api_url}deleteContent",
-            data={
-                "contentId": contentId,
-                "token": token
-            }
-        ).json()
-        return self._api_resp_handler(del_content_resp)
+        try:
+            del_content_resp = requests.delete(
+                url=f"{self.api_url}deleteContent",
+                data={
+                    "contentId": contentId,
+                    "token": token
+                }
+            ).json()
+            return self._api_resp_handler(del_content_resp)
+        except Exception as e:
+            raise Exception(f"Cannot Continue due to: {e}")
