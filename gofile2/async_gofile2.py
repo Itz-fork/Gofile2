@@ -2,15 +2,7 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import aiohttp
-import requests
-
-# Function to check if token is valid or not (using request lib as this is just a sync function)
-def is_valid_token(url, token):
-    get_account_resp = requests.get(url=f"{url}getAccountDetails?token={token}&allDetails=true").json()
-    if get_account_resp["status"] == "error-wrongToken":
-        raise Exception("WRONG TOKEN")
-    else:
-        pass
+from .errors import is_valid_token, InvalidToken,JobFailed, ResponseError
 
 
 class Async_Gofile:
@@ -40,8 +32,8 @@ class Async_Gofile:
             if "error-" in response["status"]:
                 error = response["status"].split("-")[1]
             else:
-                error = "RESPONSE ERROR"
-            raise Exception(error)
+                error = "Response Status is not ok and reason is unknown"
+            raise ResponseError(error)
 
     async def get_Server(self):
         """
@@ -59,7 +51,7 @@ class Async_Gofile:
                 return await self._api_resp_handler(server_resp)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")
     
     async def get_Account(self, check_account=False):
         """
@@ -69,6 +61,8 @@ class Async_Gofile:
         Arguments:
             check_account (optional) - Boolean. Pass True to check if account exists or not. else it'll return all data of account
         """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
         async with self.r_session as session:
             try:
                 get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true")
@@ -85,7 +79,7 @@ class Async_Gofile:
                     return await self._api_resp_handler(get_account_resp)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")
         
     async def upload(self,file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
         """
@@ -102,7 +96,7 @@ class Async_Gofile:
         """
         server = self.get_Server()["server"]
         if password != None and len(password) < 4:
-            raise Exception("passwordLength")
+            raise ValueError("Password Length must be greater than 4")
         
         async with self.r_session as session:
             try:
@@ -123,7 +117,7 @@ class Async_Gofile:
                 return await self._api_resp_handler(upload_file)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")
 
     async def create_folder(self, parentFolderId, folderName):
         """
@@ -134,6 +128,8 @@ class Async_Gofile:
             parentFolderId - The parent folder ID
             folderName - The name of the folder that wanted to create
         """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
         async with self.r_session as session:
             try:
                 folder_resp = await session.put(
@@ -149,7 +145,7 @@ class Async_Gofile:
                 return await self._api_resp_handler(folder_resp)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")
     
     async def set_folder_options(self, folderId, option, value):
         """
@@ -166,6 +162,8 @@ class Async_Gofile:
                      For "expire", must be the expiration date in the form of unix timestamp.
                      For "tags", must be a comma seperated list of tags.
         """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
         async with self.r_session as session:
             try:
                 set_folder_resp = await session.put(
@@ -182,7 +180,7 @@ class Async_Gofile:
                 return await self._api_resp_handler(set_folder_resp)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")
 
     async def delete_content(self, contentId):
         """
@@ -192,6 +190,8 @@ class Async_Gofile:
         Arguments:
             contentId - The ID of the file or folder
         """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
         async with self.r_session as session:
             try:
                 del_content_resp = await session.delete(
@@ -206,4 +206,4 @@ class Async_Gofile:
                 return await self._api_resp_handler(del_content_resp)
             except Exception as e:
                 await self.__close_session(session)
-                raise Exception(f"Cannot Continue due to: {e}")
+                raise JobFailed(f"Cannot Continue due to: {e}")

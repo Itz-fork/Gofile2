@@ -30,19 +30,30 @@ pip install git+https://github.com/Itz-fork/Gofile2.git
 ```python
 from gofile2 import Gofile
 ```
-**Asynchronous version** (Sometimes unstable)
+**Asynchronous version**
 ```python
 from gofile2 import Async_Gofile
 ```
 
 **2. Create an instance of Gofile2**
+
+**Synchronous version**
 ```python
 g_a = Gofile()
 ```
+**Asynchronous version**
+```python
+g_a = Async_Gofile()
+```
 Above code will login as guest account (Some functions won't work in this mode). If you need to login to your own account then pass your api token as `token` argument like below code.
 
+**Synchronous version**
 ```python
 g_a = Gofile(token="your_gofile_api_token_here")
+```
+**Asynchronous version**
+```python
+g_a = Async_Gofile(token="your_gofile_api_token_here")
 ```
 
 **3. Everything Done! Now Play with it!**
@@ -71,6 +82,7 @@ For now there is no documentation for [Gofile2](https://github.com/Itz-fork/Gofi
 ```python
 from gofile2 import Gofile
 
+# Replace upload with the function you want
 print(help(Gofile().upload))
 ```
 

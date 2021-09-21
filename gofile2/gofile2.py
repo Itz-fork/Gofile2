@@ -2,6 +2,8 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import requests
+from .errors import is_valid_token, InvalidToken,JobFailed, ResponseError
+
 
 class Gofile:
     """
@@ -16,11 +18,7 @@ class Gofile:
         self.api_url = "https://api.gofile.io/"
         self.token = token
         if self.token is not None:
-            is_ok = self.get_Account(check_account=True)
-            if is_ok is False:
-                raise Exception("WRONG TOKEN")
-        else:
-            pass
+            is_valid_token(url=self.api_url, token=self.token)
     
     def _api_resp_handler(self, response):
         api_status = response["status"]
@@ -30,8 +28,8 @@ class Gofile:
             if "error-" in response["status"]:
                 error = response["status"].split("-")[1]
             else:
-                error = "RESPONSE ERROR"
-            raise Exception(error)
+                error = "Response Status is not ok and reason is unknown"
+            raise ResponseError(error)
 
     def get_Server(self):
         """
@@ -45,7 +43,7 @@ class Gofile:
             server_resp = requests.get(f"{self.api_url}getServer").json()
             return self._api_resp_handler(server_resp)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
     
     def get_Account(self, check_account=False):
         """
@@ -57,7 +55,7 @@ class Gofile:
         """
         token = self.token
         if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
+            raise InvalidToken("Token is required for this action but it's None")
         try:
             get_account_resp = requests.get(url=f"{self.api_url}getAccountDetails?token={token}&allDetails=true").json()
             if check_account is True:
@@ -70,7 +68,7 @@ class Gofile:
             else:
                 return self._api_resp_handler(get_account_resp)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
         
     def upload(self,file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
         """
@@ -87,7 +85,7 @@ class Gofile:
         """
         token = self.token
         if password != None and len(password) < 4:
-            raise Exception("passwordLength")
+            raise ValueError("Password Length must be greater than 4")
         
         try:
             server = self.get_Server()["server"]
@@ -105,7 +103,7 @@ class Gofile:
             ).json()
             return self._api_resp_handler(upload_file)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
 
     def create_folder(self, parentFolderId, folderName):
         """
@@ -118,7 +116,7 @@ class Gofile:
         """
         token = self.token
         if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
+            raise InvalidToken("Token is required for this action but it's None")
         try:
             folder_resp = requests.put(
                 url=f"{self.api_url}createFolder",
@@ -130,7 +128,7 @@ class Gofile:
             ).json()
             return self._api_resp_handler(folder_resp)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
     
     def set_folder_options(self, folderId, option, value):
         """
@@ -149,7 +147,7 @@ class Gofile:
         """
         token = self.token
         if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
+            raise InvalidToken("Token is required for this action but it's None")
         try:
             set_folder_resp = requests.put(
                 url=f"{self.api_url}setFolderOptions",
@@ -162,7 +160,7 @@ class Gofile:
             ).json()
             return self._api_resp_handler(set_folder_resp)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
 
     def delete_content(self, contentId):
         """
@@ -174,7 +172,7 @@ class Gofile:
         """
         token = self.token
         if token is None:
-            raise Exception("TOKEN IS NOT DEFINED")
+            raise InvalidToken("Token is required for this action but it's None")
         try:
             del_content_resp = requests.delete(
                 url=f"{self.api_url}deleteContent",
@@ -185,4 +183,4 @@ class Gofile:
             ).json()
             return self._api_resp_handler(del_content_resp)
         except Exception as e:
-            raise Exception(f"Cannot Continue due to: {e}")
+            raise JobFailed(f"Cannot Continue due to: {e}")
