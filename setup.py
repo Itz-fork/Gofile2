@@ -4,7 +4,7 @@
 import os
 
 from setuptools import setup, find_packages
-from gofile2 import __version__ as v
+#from gofile2 import __version__ as v
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
@@ -33,7 +33,7 @@ author='Itz-fork, Codec04',
 author_email='itz-fork@users.noreply.github.com',
 license='MIT',
 packages=find_packages(),
-download_url=f"https://github.com/Itz-fork/Gofile2/releases/tag/Gofile2-{v}",
+download_url=f"https://github.com/Itz-fork/Gofile2/releases/tag/Gofile2-v1.3",
 keywords=['Gofile', 'Api-wrapper', 'Gofile2'],
 long_description=big_description,
 long_description_content_type='text/markdown',
