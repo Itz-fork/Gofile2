@@ -4,7 +4,7 @@
 import os
 
 from setuptools import setup, find_packages
-from gofile2.gofile_core import __version__ as v
+from gofile2.helpers.version import __version__ as v
 
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
