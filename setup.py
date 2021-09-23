@@ -13,7 +13,9 @@ if os.path.isfile('requirements.txt'):
     reques = req.read().splitlines()
 else:
   reques = [
-    'requests'
+    'requests',
+    'aiohttp',
+    'fake-useragent'
   ]
 
 if os.path.isfile('README.md'):
