@@ -4,8 +4,8 @@
 import os
 
 from setuptools import setup, find_packages
-#from gofile2 import __version__ as v
-v = "v1.3"
+from gofile2.gofile_core import __version__ as v
+
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
