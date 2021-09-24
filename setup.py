@@ -24,7 +24,7 @@ else:
   big_description = "Gofile2 is an API wrapper for Gofile API"
 
 # Version
-v = "v1.3.4"
+v = "v1.3.5"
 
 setup(name='gofile2',
 version=v,
