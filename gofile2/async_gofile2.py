@@ -21,9 +21,6 @@ class Async_Gofile:
         if self.token is not None:
             is_valid_token(url=self.api_url, token=self.token)
 
-    async def __close_session(self, session):
-        await session.close()
-
     async def _api_resp_handler(self, response):
         api_status = response["status"]
         if api_status == "ok":
@@ -35,7 +32,7 @@ class Async_Gofile:
                 error = "Response Status is not ok and reason is unknown"
             raise ResponseError(error)
 
-    async def get_Server(self):
+    async def get_Server(self, pre_session=False):
         """
         Get Server Function:
             Get server of Gofile
@@ -43,15 +40,18 @@ class Async_Gofile:
         Arguments:
             None
         """
-        async with self.r_session as session:
-            try:
-                server_resp = await session.get(f"{self.api_url}getServer")
-                server_resp = await server_resp.json()
-                await self.__close_session(session)
-                return await self._api_resp_handler(server_resp)
-            except Exception as e:
-                await self.__close_session(session)
-                raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+        if pre_session:
+            server_resp = await pre_session.get(f"{self.api_url}getServer")
+            server_resp = await server_resp.json()
+            return await self._api_resp_handler(server_resp)
+        else:
+            async with self.r_session as session:
+                try:
+                    server_resp = await session.get(f"{self.api_url}getServer")
+                    server_resp = await server_resp.json()
+                    return await self._api_resp_handler(server_resp)
+                except Exception as e:
+                    raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
     
     async def get_Account(self, check_account=False):
         """
@@ -67,7 +67,6 @@ class Async_Gofile:
             try:
                 get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true")
                 get_account_resp = await get_account_resp.json()
-                await self.__close_session(session)
                 if check_account is True:
                     if get_account_resp["status"] == "ok":
                         return True
@@ -78,10 +77,9 @@ class Async_Gofile:
                 else:
                     return await self._api_resp_handler(get_account_resp)
             except Exception as e:
-                await self.__close_session(session)
                 raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
         
-    async def upload(self,file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
+    async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         """
         Upload Function:
             Upload a file to Gofile
@@ -94,30 +92,42 @@ class Async_Gofile:
             tags (optional) - Tags for the folder. If multiple tags, seperate them with comma. Not applicable if you specify a folderId
             expire (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
         """
-        server = await self.get_Server()["server"]
-        if password != None and len(password) < 4:
+        if password and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
         
         async with self.r_session as session:
-            try:
-                upload_file = await session.post(
-                    url=f"https://{server}.gofile.io/uploadFile",
-                    data={
-                        "token": self.token,
-                        "folderId": folderId,
-                        "description": description,
-                        "password": password,
-                        "tags": tags,
-                        "expire": expire
-                    },
-                    files={"upload_file": open(file, "rb")}
-                )
-                upload_file = await upload_file.json()
-                await self.__close_session(session)
-                return await self._api_resp_handler(upload_file)
-            except Exception as e:
-                await self.__close_session(session)
-                raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+            server = await self.get_Server(pre_session=session)
+            server = server["server"]
+            token = self.token if self.token else ""
+
+
+            # Making dict
+            req_dict = {}
+            if token:
+                req_dict["token"] = token
+            if folderId:
+                req_dict["folderId"] = folderId
+            if description:
+                req_dict["description"] = description
+            if password:
+                req_dict["password"] = password
+            if tags:
+                req_dict["tags"] = tags
+            if expire:
+                req_dict["expire"] = expire
+            
+
+            with open(file, "rb") as go_file_d:
+                req_dict["file"] = go_file_d
+                try:
+                    upload_file = await session.post(
+                        url=f"https://{server}.gofile.io/uploadFile",
+                        data=req_dict
+                    )
+                    upload_file = await upload_file.json()
+                    return await self._api_resp_handler(upload_file)
+                except Exception as e:
+                    raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
     async def create_folder(self, parentFolderId, folderName):
         """
@@ -141,10 +151,8 @@ class Async_Gofile:
                     }
                 )
                 folder_resp = await folder_resp.json()
-                await self.__close_session(session)
                 return await self._api_resp_handler(folder_resp)
             except Exception as e:
-                await self.__close_session(session)
                 raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
     
     async def set_folder_options(self, folderId, option, value):
@@ -176,10 +184,8 @@ class Async_Gofile:
                     }
                 )
                 set_folder_resp = await set_folder_resp.json()
-                await self.__close_session(session)
                 return await self._api_resp_handler(set_folder_resp)
             except Exception as e:
-                await self.__close_session(session)
                 raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
     async def delete_content(self, contentId):
@@ -202,8 +208,6 @@ class Async_Gofile:
                     }
                 )
                 del_content_resp = await del_content_resp.json()
-                await self.__close_session(session)
                 return await self._api_resp_handler(del_content_resp)
             except Exception as e:
-                await self.__close_session(session)
                 raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
