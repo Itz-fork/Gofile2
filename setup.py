@@ -4,8 +4,6 @@
 import os
 
 from setuptools import setup, find_packages
-from gofile2.helpers.version import __version__ as v
-
 
 os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
@@ -25,6 +23,8 @@ if os.path.isfile('README.md'):
 else:
   big_description = "Gofile2 is an API wrapper for Gofile API"
 
+# Version
+v = "v1.3.4"
 
 setup(name='gofile2',
 version=v,
