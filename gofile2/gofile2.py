@@ -99,7 +99,8 @@ class Gofile:
                     "tags": tags,
                     "expire": expire
                 },
-                files={"upload_file": open(file, "rb")}
+                files={"upload_file": open(file, "rb")},
+                stream=True
             ).json()
             return self._api_resp_handler(upload_file)
         except Exception as e:
