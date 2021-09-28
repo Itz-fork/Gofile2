@@ -2,7 +2,9 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import aiohttp
-from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError
+import os
+
+from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError, InvalidPath
 
 
 class Async_Gofile:
@@ -91,11 +93,14 @@ class Async_Gofile:
             password (optional) - Password for the folder. Not applicable if you specify a folderId
             tags (optional) - Tags for the folder. If multiple tags, seperate them with comma. Not applicable if you specify a folderId
             expire (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
-        """
-        if password and len(password) < 4:
-            raise ValueError("Password Length must be greater than 4")
-        
+        """        
         async with self.r_session as session:
+            # Check time
+            if not os.path.isfile(file):
+                raise InvalidPath(f"No such file - {file}")
+            if password and len(password) < 4:
+                raise ValueError("Password Length must be greater than 4")
+            
             server = await self.get_Server(pre_session=session)
             server = server["server"]
             token = self.token if self.token else ""

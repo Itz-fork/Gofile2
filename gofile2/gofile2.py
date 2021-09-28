@@ -2,7 +2,9 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import requests
-from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError
+import os
+
+from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError, InvalidPath
 
 
 class Gofile:
@@ -83,6 +85,9 @@ class Gofile:
             tags (optional) - Tags for the folder. If multiple tags, seperate them with comma. Not applicable if you specify a folderId
             expire (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
         """
+        if not os.path.isfile(file):
+            raise InvalidPath(f"No such file - {file}")
+        
         token = self.token
         if password != None and len(password) < 4:
             raise ValueError("Password Length must be greater than 4")
