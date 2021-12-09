@@ -10,7 +10,7 @@ print(g_a.upload(file="/home/itz-fork/photo.png"))
 # About API
 > Gofile is in BETA version and this API will evolve over time. Check regularly if changes have been made.
 >
-Current version is compatible with `2021-06-22`
+Current version is compatible with `2021-11-17`
 
 # Installation
 Install via pypi
@@ -72,6 +72,12 @@ g_a.create_folder(parentFolderId="your_root_folder_id", folderName="Folder Name"
 
 # Set folder options
 g_a.set_folder_options(folderId="id_of_the_folder", option="your_option", value="your_value")
+
+# Get content details
+g_a.get_content(contentId="id_of_the_file_or_folder")
+
+# Copy file or folder to another folder
+g_a.copy_content(contentId="id_of_the_file_or_folder", folderIdDest="id_of_the_destination_folder")
 
 # Delete file or folder
 g_a.delete_content(contentId="id_of_the_file_or_folder")

@@ -168,6 +168,48 @@ class Gofile:
         except Exception as e:
             raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
+    def get_content(self, contentId):
+        """
+        Get Content Function:
+            Get a specific content details
+        
+        Arguments:
+            contentId - The ID of the file or folder
+        """
+        token = self.token
+        if token is None:
+            raise InvalidToken("Token is required for this action but it's None")
+        try:
+            get_content_resp = requests.get(url=f"{self.api_url}getContent?contentId={contentId}&token={token}").json()
+            return self._api_resp_handler(get_content_resp)
+        except Exception as e:
+            raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+    
+    def copy_content(self, contentsId, folderIdDest):
+        """
+        Copy Content Function:
+            Copy one or multiple contents to another folder
+        
+        Arguments:
+            contentsId - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
+            folderIdDest - Destinatination folder ID
+        """
+        token = self.token
+        if token is None:
+            raise InvalidToken("Token is required for this action but it's None")
+        try:
+            copy_content_resp = requests.put(
+                url=f"{self.api_url}copyContent",
+                data={
+                    "token": token,
+                    "contentsId": contentsId,
+                    "folderIdDest": folderIdDest
+                }
+            ).json()
+            return self._api_resp_handler(copy_content_resp)
+        except Exception as e:
+            raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+
     def delete_content(self, contentId):
         """
         Delete Content Function:

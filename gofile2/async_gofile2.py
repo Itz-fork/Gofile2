@@ -192,6 +192,50 @@ class Async_Gofile:
                 return await self._api_resp_handler(set_folder_resp)
             except Exception as e:
                 raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+    
+    async def get_content(self, contentId):
+        """
+        Get Content Function:
+            Get a specific content details
+        
+        Arguments:
+            contentId - The ID of the file or folder
+        """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
+        async with self.r_session as session:
+            try:
+                get_content_resp = await session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}")
+                get_content_resp = await get_content_resp.json()
+                return await self._api_resp_handler(get_content_resp)
+            except Exception as e:
+                raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+    
+    async def copy_content(self, contentsId, folderIdDest):
+        """
+        Copy Content Function:
+            Copy one or multiple contents to another folder
+        
+        Arguments:
+            contentsId - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
+            folderIdDest - Destinatination folder ID
+        """
+        if self.token is None:
+            raise InvalidToken("Token is required for this action but it's None")
+        async with self.r_session as session:
+            try:
+                copy_content_resp = await session.put(
+                    url=f"{self.api_url}copyContent",
+                    data={
+                        "token": self.token,
+                        "contentsId": contentsId,
+                        "folderIdDest": folderIdDest
+                    }
+                )
+                copy_content_resp = await copy_content_resp.json()
+                return await self._api_resp_handler(copy_content_resp)
+            except Exception as e:
+                raise JobFailed(f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
     async def delete_content(self, contentId):
         """
