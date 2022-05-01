@@ -10,7 +10,7 @@ print(g_a.upload(file="/home/itz-fork/photo.png"))
 # About API
 > Gofile is in BETA version and this API will evolve over time. Check regularly if changes have been made.
 >
-Current version is compatible with `2021-11-17`
+Current version is compatible with `2022-03-25`
 
 # Installation
 Install via pypi
