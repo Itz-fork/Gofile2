@@ -4,7 +4,6 @@
 import os
 import aiohttp
 
-from aiofiles import open
 from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError, InvalidPath
 
 
@@ -132,7 +131,7 @@ class Async_Gofile:
             if expire:
                 req_dict["expire"] = expire
 
-            async with open(file, "rb") as go_file_d:
+            with open(file, "rb") as go_file_d:
                 req_dict["file"] = go_file_d
                 try:
                     upload_file = await session.post(
