@@ -96,6 +96,8 @@ class Async_Gofile:
             - `path` - Path to the folder
             - `folderId` (optional) - The ID of a folder. When using the folderId, you must pass the token
         """
+        if not os.path.isdir(path):
+            raise InvalidPath(f"{path} is not a valid directory")
         uploaded = []
         files = [val for sublist in [[os.path.join(
             i[0], j) for j in i[2]] for i in os.walk(path)] for val in sublist]
