@@ -64,6 +64,9 @@ g_a.get_Server()
 # Get account info
 g_a.get_Account()
 
+# Upload a folder
+g_a.upload_folder(path="path_to_your_folder")
+
 # Upload a file
 g_a.upload(file="path_to_your_file")
 

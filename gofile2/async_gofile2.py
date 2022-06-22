@@ -85,6 +85,22 @@ class Async_Gofile:
             except Exception as e:
                 raise JobFailed(e)
 
+    async def upload_folder(self, path: str, folderId: str = ""):
+        """
+        ### Upload folder Function
+
+            Upload files in the given path to Gofile
+
+        ### Arguments
+
+            - `path` - Path to the folder
+            - `folderId` (optional) - The ID of a folder. When using the folderId, you must pass the token
+        """
+        files = [val for sublist in [[os.path.join(
+            i[0], j) for j in i[2]] for i in os.walk(path)] for val in sublist]
+        for file in files:
+            await self.upload(file, folderId)
+
     async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         """
         ### Upload Function:

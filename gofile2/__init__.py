@@ -5,4 +5,4 @@
 from .gofile2 import Gofile
 from .async_gofile2 import Async_Gofile
 
-__version__ = "v1.3.7"
+__version__ = "v1.4"

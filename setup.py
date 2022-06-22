@@ -26,7 +26,7 @@ if os.path.isfile('README.md'):
 else:
     big_description = "Gofile2 is an API wrapper for Gofile API"
 
-# Version (https://github.com/pyrogram/pyrogram/blob/97b6c32c7ff707fd2721338581e7dad5072f745e/setup.py#L30)
+# Version (Ref: https://github.com/pyrogram/pyrogram/blob/97b6c32c7ff707fd2721338581e7dad5072f745e/setup.py#L30)
 with open("gofile2/__init__.py", encoding="utf-8") as f:
     v = findall(r"__version__ = \"(.+)\"", f.read())[0]
 

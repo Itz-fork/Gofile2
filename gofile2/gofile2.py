@@ -81,6 +81,22 @@ class Gofile:
             raise JobFailed(
                 f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
+    def upload_folder(self, path: str, folderId: str = ""):
+        """
+        ### Upload folder Function
+
+            Upload files in the given path to Gofile
+
+        ### Arguments
+
+            - `path` - Path to the folder
+            - `folderId` (optional) - The ID of a folder. When using the folderId, you must pass the token
+        """
+        files = [val for sublist in [[os.path.join(
+            i[0], j) for j in i[2]] for i in os.walk(path)] for val in sublist]
+        for file in files:
+            self.upload(file, folderId)
+
     def upload(self, file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
         """
         ### Upload Function:
