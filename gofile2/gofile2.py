@@ -2,9 +2,10 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import os
-import requests
 
-from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError, InvalidPath
+from requests import get, post, put, delete
+from .errors import (InvalidPath, InvalidToken, JobFailed, ResponseError,
+                     is_valid_token)
 
 
 class Gofile:
@@ -44,7 +45,7 @@ class Gofile:
             `None`
         """
         try:
-            server_resp = requests.get(f"{self.api_url}getServer").json()
+            server_resp = get(f"{self.api_url}getServer").json()
             return self._api_resp_handler(server_resp)
         except Exception as e:
             raise JobFailed(
@@ -65,7 +66,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            get_account_resp = requests.get(
+            get_account_resp = get(
                 url=f"{self.api_url}getAccountDetails?token={token}&allDetails=true").json()
             if check_account is True:
                 if get_account_resp["status"] == "ok":
@@ -106,7 +107,7 @@ class Gofile:
 
         try:
             server = self.get_Server()["server"]
-            upload_file = requests.post(
+            upload_file = post(
                 url=f"https://{server}.gofile.io/uploadFile",
                 data={
                     "token": token,
@@ -140,7 +141,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            folder_resp = requests.put(
+            folder_resp = put(
                 url=f"{self.api_url}createFolder",
                 data={
                     "parentFolderId": parentFolderId,
@@ -175,7 +176,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            set_folder_resp = requests.put(
+            set_folder_resp = put(
                 url=f"{self.api_url}setFolderOptions",
                 data={
                     "token": token,
@@ -204,7 +205,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            get_content_resp = requests.get(
+            get_content_resp = get(
                 url=f"{self.api_url}getContent?contentId={contentId}&token={token}").json()
             return self._api_resp_handler(get_content_resp)
         except Exception as e:
@@ -227,7 +228,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            copy_content_resp = requests.put(
+            copy_content_resp = put(
                 url=f"{self.api_url}copyContent",
                 data={
                     "token": token,
@@ -255,7 +256,7 @@ class Gofile:
             raise InvalidToken(
                 "Token is required for this action but it's None")
         try:
-            del_content_resp = requests.delete(
+            del_content_resp = delete(
                 url=f"{self.api_url}deleteContent",
                 data={
                     "contentId": contentId,

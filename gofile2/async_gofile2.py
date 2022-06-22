@@ -2,9 +2,10 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import os
-import aiohttp
 
-from .errors import is_valid_token, InvalidToken, JobFailed, ResponseError, InvalidPath
+from aiohttp import ClientSession
+from .errors import (InvalidOption, InvalidPath, InvalidToken, JobFailed,
+                     ResponseError, is_valid_token)
 
 
 class Async_Gofile:
@@ -20,7 +21,6 @@ class Async_Gofile:
 
     def __init__(self, token=None):
         self.api_url = "https://api.gofile.io/"
-        self.r_session = aiohttp.ClientSession()
         self.token = token
         if self.token is not None:
             is_valid_token(url=self.api_url, token=self.token)
@@ -49,14 +49,13 @@ class Async_Gofile:
             server_resp = await server_resp.json()
             return await self._api_resp_handler(server_resp)
         else:
-            async with self.r_session as session:
+            async with ClientSession() as session:
                 try:
                     server_resp = await session.get(f"{self.api_url}getServer")
                     server_resp = await server_resp.json()
                     return await self._api_resp_handler(server_resp)
                 except Exception as e:
-                    raise JobFailed(
-                        f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                    raise JobFailed(e)
 
     async def get_Account(self, check_account=False):
         """
@@ -69,9 +68,8 @@ class Async_Gofile:
             - `check_account` (optional) - Boolean. Pass True to check if account exists or not. else it'll return all data of account
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        async with ClientSession() as session:
             try:
                 get_account_resp = await session.get(url=f"{self.api_url}getAccountDetails?token={self.token}&allDetails=true")
                 get_account_resp = await get_account_resp.json()
@@ -85,8 +83,7 @@ class Async_Gofile:
                 else:
                     return await self._api_resp_handler(get_account_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
 
     async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):
         """
@@ -105,7 +102,7 @@ class Async_Gofile:
             - `tags` (optional) - Tags for the folder. If multiple tags, seperate them with comma. Not applicable if you specify a folderId
             - `expire` (optional) - Expiration date of the folder. Must be in the form of unix timestamp. Not applicable if you specify a folderId
         """
-        async with self.r_session as session:
+        async with ClientSession() as session:
             # Check time
             if not os.path.isfile(file):
                 raise InvalidPath(f"No such file - {file}")
@@ -141,8 +138,7 @@ class Async_Gofile:
                     upload_file = await upload_file.json()
                     return await self._api_resp_handler(upload_file)
                 except Exception as e:
-                    raise JobFailed(
-                        f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                    raise JobFailed(e)
 
     async def create_folder(self, parentFolderId, folderName):
         """
@@ -156,9 +152,8 @@ class Async_Gofile:
             - `folderName` - The name of the folder that wanted to create
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        async with ClientSession() as session:
             try:
                 folder_resp = await session.put(
                     url=f"{self.api_url}createFolder",
@@ -171,8 +166,7 @@ class Async_Gofile:
                 folder_resp = await folder_resp.json()
                 return await self._api_resp_handler(folder_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
 
     async def set_folder_options(self, folderId, option, value):
         """
@@ -192,9 +186,10 @@ class Async_Gofile:
                      - For "tags", must be a comma seperated list of tags.
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        if not option in ["public", "password", "description", "expire", "tags"]:
+            raise InvalidOption(option)
+        async with ClientSession() as session:
             try:
                 set_folder_resp = await session.put(
                     url=f"{self.api_url}setFolderOptions",
@@ -208,8 +203,7 @@ class Async_Gofile:
                 set_folder_resp = await set_folder_resp.json()
                 return await self._api_resp_handler(set_folder_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
 
     async def get_content(self, contentId):
         """
@@ -222,16 +216,14 @@ class Async_Gofile:
             - `contentId` - The ID of the file or folder
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        async with ClientSession() as session:
             try:
                 get_content_resp = await session.get(url=f"{self.api_url}getContent?contentId={contentId}&token={self.token}")
                 get_content_resp = await get_content_resp.json()
                 return await self._api_resp_handler(get_content_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
 
     async def copy_content(self, contentsId, folderIdDest):
         """
@@ -245,9 +237,8 @@ class Async_Gofile:
             - `folderIdDest` - Destinatination folder ID
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        async with ClientSession() as session:
             try:
                 copy_content_resp = await session.put(
                     url=f"{self.api_url}copyContent",
@@ -260,8 +251,7 @@ class Async_Gofile:
                 copy_content_resp = await copy_content_resp.json()
                 return await self._api_resp_handler(copy_content_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
 
     async def delete_content(self, contentId):
         """
@@ -274,9 +264,8 @@ class Async_Gofile:
             - `contentId` - The ID of the file or folder
         """
         if self.token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
-        async with self.r_session as session:
+            raise InvalidToken()
+        async with ClientSession() as session:
             try:
                 del_content_resp = await session.delete(
                     url=f"{self.api_url}deleteContent",
@@ -288,5 +277,4 @@ class Async_Gofile:
                 del_content_resp = await del_content_resp.json()
                 return await self._api_resp_handler(del_content_resp)
             except Exception as e:
-                raise JobFailed(
-                    f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
+                raise JobFailed(e)
