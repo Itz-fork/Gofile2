@@ -189,18 +189,18 @@ class Async_Gofile:
             except Exception as e:
                 raise JobFailed(e)
 
-    async def set_folder_options(self, folderId, option, value):
+    async def set_folder_option(self, folderId, option, value):
         """
-        ### Set Folder Options Function:
+        ### Set Folder Option Function:
 
             Set an option on a folder
 
         ### Arguments:
 
             - `folderId` - The ID of the folder
-            - `option` - Option that you want to set. Can be "private", "password", "description", "expire" or "tags"
+            - `option` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
             - `value` - The value of the option to be defined.
-                     - For "private", can be "true" or "false".
+                     - For "public", can be "true" or "false".
                      - For "password", must be the password.
                      - For "description", must be the description.
                      - For "expire", must be the expiration date in the form of unix timestamp.
@@ -213,7 +213,7 @@ class Async_Gofile:
         async with ClientSession() as session:
             try:
                 set_folder_resp = await session.put(
-                    url=f"{self.api_url}setFolderOptions",
+                    url=f"{self.api_url}setFolderOption",
                     data={
                         "token": self.token,
                         "folderId": folderId,

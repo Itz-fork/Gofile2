@@ -3,9 +3,9 @@
 # Project: Gofile2
 import os
 
-from requests import get, post, put, delete
-from .errors import (InvalidPath, InvalidToken, JobFailed, ResponseError,
-                     is_valid_token)
+from requests import delete, get, post, put
+from .errors import (InvalidOption, InvalidPath, InvalidToken, JobFailed,
+                     ResponseError, is_valid_token)
 
 
 class Gofile:
@@ -175,18 +175,18 @@ class Gofile:
             raise JobFailed(
                 f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
-    def set_folder_options(self, folderId, option, value):
+    def set_folder_option(self, folderId, option, value):
         """
-        ### Set Folder Options Function:
+        ### Set Folder Option Function:
 
             Set an option on a folder
 
         ### Arguments:
 
             - `folderId` - The ID of the folder
-            - `option` - Option that you want to set. Can be "private", "password", "description", "expire" or "tags"
+            - `option` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
             - `value` - The value of the option to be defined.
-                     - For "private", can be "true" or "false".
+                     - For "public", can be "true" or "false".
                      - For "password", must be the password.
                      - For "description", must be the description.
                      - For "expire", must be the expiration date in the form of unix timestamp.
@@ -194,11 +194,12 @@ class Gofile:
         """
         token = self.token
         if token is None:
-            raise InvalidToken(
-                "Token is required for this action but it's None")
+            raise InvalidToken()
+        if not option in ["public", "password", "description", "expire", "tags"]:
+            raise InvalidOption(option)
         try:
             set_folder_resp = put(
-                url=f"{self.api_url}setFolderOptions",
+                url=f"{self.api_url}setFolderOption",
                 data={
                     "token": token,
                     "folderId": folderId,

@@ -74,7 +74,7 @@ g_a.upload(file="path_to_your_file")
 g_a.create_folder(parentFolderId="your_root_folder_id", folderName="Folder Name")
 
 # Set folder options
-g_a.set_folder_options(folderId="id_of_the_folder", option="your_option", value="your_value")
+g_a.set_folder_option(folderId="id_of_the_folder", option="your_option", value="your_value")
 
 # Get content details
 g_a.get_content(contentId="id_of_the_file_or_folder")
