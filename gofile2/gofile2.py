@@ -3,7 +3,7 @@
 # Project: Gofile2
 import os
 
-from time import time, strftime
+import time
 from requests import delete, get, post, put
 from .errors import (InvalidOption, InvalidPath, InvalidToken, JobFailed,
                      ResponseError, is_valid_token)
@@ -104,7 +104,7 @@ class Gofile:
         # Get folder id if not passed
         if not folderId:
             rtfid = self.get_Account()["rootFolder"]
-            folderId = self.create_folder(rtfid, "Gofile2 - Created in {}".format(strftime("%b %d, %Y %l:%M%p")))["id"]
+            folderId = self.create_folder(rtfid, "Gofile2 - Created in {}".format(time.strftime("%b %d, %Y %I:%M%p")))["id"]
         for file in files:
             udt = self.upload(file, folderId)
             uploaded.append(udt)
