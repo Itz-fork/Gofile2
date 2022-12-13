@@ -3,6 +3,8 @@
 # Project: Gofile2
 import os
 
+from asyncio import sleep
+from time import strftime
 from aiohttp import ClientSession
 from .errors import (InvalidOption, InvalidPath, InvalidToken, JobFailed,
                      ResponseError, is_valid_token)
@@ -85,8 +87,10 @@ class Async_Gofile:
             except Exception as e:
                 raise JobFailed(e)
 
-    async def upload_folder(self, path: str, folderId: str = ""):
+    async def upload_folder(self, path: str, folderId: str = "", folder_name: str = "Gofile2", delay: int = 2):
         """
+        NOTE: To use this function, you must have a gofile token
+
         ### Upload folder Function
 
             Upload files in the given path to Gofile
@@ -95,15 +99,21 @@ class Async_Gofile:
 
             - `path` - Path to the folder
             - `folderId` (optional) - The ID of a folder. When using the folderId, you must pass the token
+            - `delay` - Time interval between file uploads (in seconds)
         """
         if not os.path.isdir(path):
             raise InvalidPath(f"{path} is not a valid directory")
         uploaded = []
         files = [val for sublist in [[os.path.join(
             i[0], j) for j in i[2]] for i in os.walk(path)] for val in sublist]
+        # Get folder id if not passed
+        if not folderId:
+            rtfid = (await self.get_Account())["rootFolder"]
+            folderId = (await self.create_folder(rtfid, "Gofile2 - Created in {}".format(strftime("%b %d, %Y %l:%M%p"))))["id"]
         for file in files:
             udt = await self.upload(file, folderId)
             uploaded.append(udt)
+            await sleep(2)
         return uploaded
 
     async def upload(self, file: str, folderId: str = "", description: str = "", password: str = "", tags: str = "", expire: str = ""):

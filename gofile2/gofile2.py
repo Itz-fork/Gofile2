@@ -3,6 +3,7 @@
 # Project: Gofile2
 import os
 
+from time import time, strftime
 from requests import delete, get, post, put
 from .errors import (InvalidOption, InvalidPath, InvalidToken, JobFailed,
                      ResponseError, is_valid_token)
@@ -81,8 +82,10 @@ class Gofile:
             raise JobFailed(
                 f"Error Happend: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues")
 
-    def upload_folder(self, path: str, folderId: str = ""):
+    def upload_folder(self, path: str, folderId: str = "", delay: int = 2):
         """
+        NOTE: To use this function, you must have a gofile token
+
         ### Upload folder Function
 
             Upload files in the given path to Gofile
@@ -91,15 +94,21 @@ class Gofile:
 
             - `path` - Path to the folder
             - `folderId` (optional) - The ID of a folder. When using the folderId, you must pass the token
+            - `delay` - Time interval between file uploads (in seconds)
         """
         if not os.path.isdir(path):
             raise InvalidPath(f"{path} is not a valid directory")
         uploaded = []
         files = [val for sublist in [[os.path.join(
             i[0], j) for j in i[2]] for i in os.walk(path)] for val in sublist]
+        # Get folder id if not passed
+        if not folderId:
+            rtfid = self.get_Account()["rootFolder"]
+            folderId = self.create_folder(rtfid, "Gofile2 - Created in {}".format(strftime("%b %d, %Y %l:%M%p")))["id"]
         for file in files:
             udt = self.upload(file, folderId)
             uploaded.append(udt)
+            time.sleep(2)
         return uploaded
 
     def upload(self, file: str, folderId: str = None, description: str = None, password: str = None, tags: str = None, expire: int = None):
