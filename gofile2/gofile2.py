@@ -129,7 +129,7 @@ class Gofile:
             async with session.get(
                 f"{self.api_url}getAccountDetails?token={token}"
             ) as resp:
-                resp = resp.json()
+                resp = await resp.json()
                 if resp["status"] == "error-wrongToken":
                     raise InvalidToken(
                         "Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile"
@@ -190,6 +190,9 @@ class Gofile:
         async with aiopen(file, "rb") as toup:
             data.add_field("file", await toup.read(), filename=file)
         if folderId:
+            # without a token, user can't upload multiple files to the same folder
+            if not self.token:
+                raise InvalidToken()
             data.add_field("folderId", folderId)
         
         return await self._api_request(

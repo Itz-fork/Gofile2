@@ -5,7 +5,10 @@
 
 class InvalidToken(Exception):
     def __init__(self) -> None:
-        Exception.__init__(self, "Token is required for this function")
+        Exception.__init__(
+            self,
+            "You need to initialize the Gofile class with a token to perform this action"
+        )
 
 
 class ResponseError(Exception):

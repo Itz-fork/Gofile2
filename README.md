@@ -4,6 +4,7 @@ from gofile2 import Gofile
 
 g_a = await Gofile.initialize()
 await g_a.upload("/home/itz-fork/photo.png")
+await g_a.done()
 ```
 ***An API Wrapper for Gofile API.***
 
@@ -82,6 +83,9 @@ await g_a.copy_content(contentsId="id_of_the_file_or_folder", folderIdDest="id_o
 
 # Delete file or folder
 await g_a.delete_content(contentsId="id_of_the_file_or_folder")
+
+# After everything, send close Gofile client
+await g_a.done()
 ```
 
 # Docs
@@ -141,6 +145,9 @@ await g_a.delete_content(contentsId="id_of_the_file_or_folder")
 - `delete_content (contentsId: str) -> None`
     - Delete one or multiple files/folders
     - `contentsId: str` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
+
+- `done () -> None`
+    - Close the session
 
 _Automatically generated on 2024:01:05:13:41:40_
 
