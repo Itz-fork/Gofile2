@@ -84,7 +84,7 @@ class Gofile:
             url = f"https://{server}.gofile.io/uploadFile"
         else:
             url = f"{self.api_url}{endpoint}"
-        if data:
+        if data and self.token:
             data.add_field("token", self.token)
 
         # make request
@@ -188,7 +188,7 @@ class Gofile:
 
         data = FormData()
         async with aiopen(file, "rb") as toup:
-            data.add_field("file", toup, filename=file)
+            data.add_field("file", await toup.read(), filename=file)
         if folderId:
             data.add_field("folderId", folderId)
         
