@@ -49,7 +49,10 @@ setup(name='gofile2',
           'Intended Audience :: Developers',
           'Topic :: Education',
           'License :: OSI Approved :: MIT License',
-          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
           'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
+          'Programming Language :: Python :: 3.11'
       ],
       )

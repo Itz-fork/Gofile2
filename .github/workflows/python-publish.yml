@@ -1,14 +1,12 @@
 name: Upload to Pypi
 
-on:
-  release:
-    types: [published]
+on: workflow_dispatch
 
 permissions:
   contents: read
 
 jobs:
-  deploy:
+  publish:
 
     runs-on: ubuntu-latest
 
