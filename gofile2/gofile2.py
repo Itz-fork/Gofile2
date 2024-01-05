@@ -8,7 +8,7 @@ from aiofiles import open as aiopen
 from asyncio import sleep as asleep
 from aiohttp import ClientSession, FormData
 
-from errors import InvalidOption, InvalidPath, InvalidToken, ResponseError
+from .errors import InvalidOption, InvalidPath, InvalidToken, ResponseError
 
 
 class Gofile:

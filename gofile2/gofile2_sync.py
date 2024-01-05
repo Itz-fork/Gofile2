@@ -4,7 +4,7 @@
 from asyncio import get_event_loop
 from typing import Any, Dict, List
 
-from gofile2 import Gofile
+from .gofile2 import Gofile
 
 
 class Sync_Gofile:
