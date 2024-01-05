@@ -162,3 +162,11 @@ class Sync_Gofile:
             - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
         """
         return self.loop.run_until_complete(self.gofile.delete_content(contentsId))
+    
+    def done(self):
+        """
+        ## Done function
+
+            Close the session
+        """
+        return self.loop.run_until_complete(self.gofile.done())

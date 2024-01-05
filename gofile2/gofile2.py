@@ -42,6 +42,7 @@ class Gofile:
     def __init__(self, token=None):
         self.api_url = "https://api.gofile.io/"
         self.token = token
+        self.session = ClientSession()
 
     @classmethod
     async def initialize(cls, token=None):
@@ -88,23 +89,20 @@ class Gofile:
 
         # make request
         resp = None
-        async with ClientSession() as session:
-            # GET
-            if method == "GET":
-                async with session.get(url, params=params, data=data) as resp:
-                    resp = resp.json()
+        if method == "GET":
+            resp = await self.session.get(url, params=params, data=data)
 
-            elif method == "POST":
-                async with session.post(url, data=data) as resp:
-                    resp = resp.json()
+        elif method == "POST":
+             resp = await self.session.post(url, data=data)
 
-            elif method == "PUT":
-                async with session.put(url, data=data) as resp:
-                    resp = resp.json()
+        elif method == "PUT":
+            resp = await self.session.put(url, data=data)
 
-            elif method == "DELETE":
-                async with session.delete(url, data=data) as resp:
-                    resp = resp.json()
+        elif method == "DELETE":
+             resp = await self.session.delete(url, data=data)
+
+        # convert to json
+        resp = await resp.json()
 
         # error handling
         status = resp["status"]
@@ -174,7 +172,7 @@ class Gofile:
             "GET", "getContent", params={"contentId": contentId}
         )
 
-    async def upload(self, file: str, folderId: str) -> Dict[str, Any]:
+    async def upload(self, file: str, folderId: str = None) -> Dict[str, Any]:
         """
         ## Upload:
 
@@ -345,3 +343,12 @@ class Gofile:
         data = FormData()
         data.add_field("contentsId", contentsId)
         return await self._api_request("DELETE", "deleteContent", data=data)
+    
+
+    async def done(self):
+        """
+        ## Done function
+
+            Close the session
+        """
+        await self.session.close()
