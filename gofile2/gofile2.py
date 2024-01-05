@@ -54,7 +54,7 @@ class Gofile:
 
             - `token` (optional for some functions)- The access token of an account. Can be retrieved from the profile page
         """
-        gofile_cls = cls("https://api.gofile.io/", token)
+        gofile_cls = cls(token)
         if token is not None:
             await gofile_cls.validate_token(token)
         return gofile_cls
