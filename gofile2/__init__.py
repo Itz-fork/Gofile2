@@ -3,6 +3,6 @@
 # Project: Gofile2
 
 from .gofile2 import Gofile
-from .async_gofile2 import Async_Gofile
+from .gofile2_sync import Gofile
 
-__version__ = "v1.4.3"
+__version__ = "v1.5"

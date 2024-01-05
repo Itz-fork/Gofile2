@@ -1,2 +1,2 @@
-requests
-aiohttp
+aiohttp==3.9.1
+aiofiles==23.2.1
