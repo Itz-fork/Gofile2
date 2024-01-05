@@ -187,9 +187,11 @@ class Gofile:
             raise InvalidPath(f"{file} is not a valid file path")
 
         data = FormData()
-        data.add_field("folderId", folderId)
         async with aiopen(file, "rb") as toup:
             data.add_field("file", toup, filename=file)
+        if folderId:
+            data.add_field("folderId", folderId)
+        
         return await self._api_request(
             "POST", "uploadFile", data=data, need_token=False
         )
@@ -223,25 +225,14 @@ class Gofile:
         # do first request to collect folder id if folderId is None
         if folderId is None:
             file = files.pop(0)
-            data = FormData()
-            data.add_field("folderId", folderId)
-            async with aiopen(file, "rb") as toup:
-                data.add_field("folder", toup, filename=file)
-            fres = await self._api_request(
-                "POST", "uploadFile", data=data, need_token=False
-            )
-            folderId = fres["parentFolder"]
-            uploaded.append(fres)
+            upres = await self.upload(file)
+            folderId = upres["parentFolder"]
+            uploaded.append(upres)
 
         for file in files:
-            data = FormData()
-            data.add_field("folderId", folderId)
-            async with aiopen(file, "rb") as toup:
-                data.add_field("folder", toup, filename=file)
-            upres = await self._api_request(
-                "POST", "uploadFile", data=data, need_token=False
-            )
+            upres = await self.upload(file, folderId)
             uploaded.append(upres)
+            # sleep for x amount of time to avoid potential rate limits / ip bans
             await asleep(delay)
 
         return uploaded
