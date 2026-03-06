@@ -1,6 +1,6 @@
-# Original Author: Codec04
-# Re-built by Itz-fork
-# Project: Gofile2
+# Copyright (c) 2026 Present Itz-fork
+# Author: https://github.com/Itz-fork
+# Project: https://github.com/Itz-fork/Gofile2
 import os
 
 from re import findall

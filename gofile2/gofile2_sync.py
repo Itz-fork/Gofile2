@@ -1,6 +1,6 @@
-# Original Author: Codec04
-# Re-built by Itz-fork
-# Project: Gofile2
+# Copyright (c) 2026 Present Itz-fork
+# Author: https://github.com/Itz-fork
+# Project: https://github.com/Itz-fork/Gofile2
 import asyncio
 from typing import Any, Dict, List, Optional
 
@@ -20,9 +20,25 @@ class Sync_Gofile:
 
         with Sync_Gofile(token="...") as g:
             g.upload("file.txt")
+
+    Note:
+        Cannot be used inside a running async event loop
+        (e.g. Jupyter notebooks or async frameworks).
+        Use :class:`Gofile` directly in those contexts.
     """
 
     def __init__(self, token: Optional[str] = None):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is not None:
+            raise RuntimeError(
+                "Sync_Gofile cannot be used inside an already running "
+                "event loop. Use the async Gofile client instead."
+            )
+
         self._async_client = Gofile(token)
         self._loop = asyncio.new_event_loop()
 

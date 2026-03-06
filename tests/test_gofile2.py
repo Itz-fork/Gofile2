@@ -569,6 +569,12 @@ class TestSyncGofile:
         assert g._async_client.token == "test-token"
         g.done()
 
+    def test_sync_init_in_running_loop(self):
+        async def _inner():
+            with pytest.raises(RuntimeError, match="already running"):
+                Sync_Gofile(token="test-token")
+        asyncio.get_event_loop_policy().new_event_loop().run_until_complete(_inner())
+
     def test_sync_context_manager(self):
         with Sync_Gofile(token="test") as g:
             assert g._async_client.token == "test"
