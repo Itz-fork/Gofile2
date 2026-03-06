@@ -1,29 +1,35 @@
-# Original Author: Codec04
-# Re-built by Itz-fork
-# Project: Gofile2
+# Copyright (c) 2026 Present Itz-fork
+# Author: https://github.com/Itz-fork
+# Project: https://github.com/Itz-fork/Gofile2
 
 
 class InvalidToken(Exception):
-    def __init__(self) -> None:
-        Exception.__init__(
-            self,
-            "You need to initialize the Gofile class with a token to perform this action"
+    def __init__(self, message=None) -> None:
+        super().__init__(
+            message
+            or "A valid token is required to perform this action"
         )
 
 
 class ResponseError(Exception):
-    def __init__(self, e) -> None:
-        Exception.__init__(
-            self,
-            f"Gofile server responded with: {e} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues",
+    def __init__(self, status) -> None:
+        super().__init__(
+            f"Gofile server responded with: {status} \n\nReport this at ----> https://github.com/Itz-fork/Gofile2/issues",
+        )
+
+
+class RateLimitError(Exception):
+    def __init__(self) -> None:
+        super().__init__(
+            "Rate limit exceeded. Try again later"
         )
 
 
 class InvalidPath(Exception):
     def __init__(self, e) -> None:
-        Exception.__init__(self, e)
+        super().__init__(e)
 
 
 class InvalidOption(Exception):
     def __init__(self, opt) -> None:
-        Exception.__init__(self, f"{opt} doesn't appear to be a valid option")
+        super().__init__(f"{opt} doesn't appear to be a valid option")

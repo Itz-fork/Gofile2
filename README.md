@@ -2,9 +2,8 @@
 ```python
 from gofile2 import Gofile
 
-g_a = await Gofile.initialize()
-await g_a.upload("/home/itz-fork/photo.png")
-await g_a.done()
+async with Gofile() as g:
+    await g.upload("/home/itz-fork/photo.png")
 ```
 ***An API Wrapper for Gofile API.***
 
@@ -13,7 +12,7 @@ await g_a.done()
 # About API
 > Gofile is in BETA version and this API will evolve over time. Check regularly if changes have been made.
 >
-Current version is compatible with `2023-04-20`
+Current version is compatible with `2025-05-16`
 
 # Installation
 Install via pypi
@@ -43,115 +42,120 @@ from gofile2 import Sync_Gofile
 
 **Asynchronous version**
 ```python
-g_a = await Gofile.initialize()
+g_a = Gofile(token="your_gofile_api_token_here")
 ```
 **Synchronous version**
 ```python
-g_a = Sync_Gofile()
+g_a = Sync_Gofile(token="your_gofile_api_token_here")
 ```
-Above code will login as guest account. Keep in mind that only `get_server`, `upload` and `upload_folder` functions works in this mode. If you want to use other functions you will need to have a premium account (as of `2023-04-20`) token. If you need to login to your own account then pass your api token as `token` argument like below code.
-
-```python
-g_a = await Gofile.initialize(token="your_gofile_api_token_here")
-```
+All API requests require authentication via a bearer token, which is sent automatically in the `Authorization` header. Tokens can be generated from the [profile page](https://gofile.io/myProfile). Guest uploads (without a token) are supported for the `upload` method only.
 
 **3. Everything Done! Now Play with it!**
+
+**Asynchronous version with context manager (recommended)**
 ```python
-# Get current server
-await g_a.get_server()
+async with Gofile(token="your_token") as g:
+    # Upload a file
+    await g.upload(file="path_to_your_file")
 
-# Upload a folder
-await g_a.upload_folder(path="path_to_your_folder")
+    # Upload a file to a specific folder
+    await g.upload(file="path_to_your_file", folderId="folder_id")
 
-# Upload a file
+    # Upload a file to a specific region
+    await g.upload(file="path_to_your_file", server="upload-eu-par")
+
+    # Upload a folder
+    await g.upload_folder(path="path_to_your_folder")
+
+    # Create folder
+    await g.create_folder(parentFolderId="your_root_folder_id", folderName="Folder Name")
+
+    # Update content attributes (rename, set description, tags, etc.)
+    await g.update_content(contentId="id_of_content", attribute="name", attributeValue="new_name.txt")
+
+    # Delete file or folder
+    await g.delete_content(contentId="id_of_the_file_or_folder")
+```
+
+**Synchronous version with context manager**
+```python
+with Sync_Gofile(token="your_token") as g:
+    g.upload(file="path_to_your_file")
+    g.create_folder(parentFolderId="root_folder_id", folderName="My Folder")
+    g.update_content(contentId="content_id", attribute="name", attributeValue="new_name.txt")
+    g.delete_content(contentId="content_id")
+```
+
+**Manual session management**
+```python
+g_a = Gofile(token="your_token")
+
 await g_a.upload(file="path_to_your_file")
 
-# Get account info
-await g_a.get_account()
-
-# Get content details
-await g_a.get_content(contentId="id_of_the_file_or_folder")
-
-# Create folder
-await g_a.create_folder(parentFolderId="your_root_folder_id", folderName="Folder Name")
-
-# Set options
-await g_a.set_option(contentId="id_of_the_contentr", option="your_option", value="your_value")
-
-# Copy file or folder to another folder
-await g_a.copy_content(contentsId="id_of_the_file_or_folder", folderIdDest="id_of_the_destination_folder")
-
-# Delete file or folder
-await g_a.delete_content(contentsId="id_of_the_file_or_folder")
-
-# After everything, send close Gofile client
+# Close the session when done
 await g_a.done()
 ```
 
+# Regional Upload Servers
+
+By default, uploads go through `upload.gofile.io` which automatically selects the best server. You can also specify a regional server:
+
+| Server | Location |
+|--------|----------|
+| `upload-eu-par` | Paris |
+| `upload-na-phx` | Phoenix |
+| `upload-ap-sgp` | Singapore |
+| `upload-ap-hkg` | Hong Kong |
+| `upload-ap-tyo` | Tokyo |
+| `upload-sa-sao` | São Paulo |
+
+```python
+await g.upload(file="file.txt", server="upload-eu-par")
+```
+
 # Docs
-- `initialize (token: Optional[str] = None) -> Gofile`
-    - Create a Gofile2 object
-    - `token: Optional[str]` - The access token of an account. Can be retrieved from the profile page
 
-- `_api_request (method: str, endpoint: str, params: Optional[Dict[str, Any]] = None, data: Optional[FormData] = None, need_token: bool = True) -> Dict[str, Any]`
-    - Make an API request to Gofile server
-    - `method: str` - The HTTP method to use for the request
-    - `endpoint: str` - The API endpoint to request
-    - `params: Optional[Dict[str, Any]]` - The query parameters to include in the request
-    - `data: Optional[FormData]` - The form data to include in the request
-    - `need_token: bool` - Whether a token is required for the request
+- `Gofile(token: Optional[str] = None)`
+    - Create an async Gofile2 client
+    - `token: Optional[str]` - API token for authentication
 
-- `validate_token (token: str) -> None`
-    - Validate gofile token
-    - `token: str` - The token to validate
+- `Sync_Gofile(token: Optional[str] = None)`
+    - Create a sync Gofile2 client
+    - `token: Optional[str]` - API token for authentication
 
-- `get_server () -> str`
-    - Get the best server available to receive files
+- `upload(file: str, folderId: Optional[str] = None, server: Optional[str] = None) -> Dict[str, Any]`
+    - Upload a file to Gofile storage
+    - `file: str` - Path to file to upload
+    - `folderId: Optional[str]` - Destination folder ID
+    - `server: Optional[str]` - Regional upload server
 
-- `get_account () -> Dict[str, Any]`
-    - Get information about the account
+- `upload_folder(path: str, folderId: Optional[str] = None, delay: int = 3, server: Optional[str] = None) -> List[Dict[str, Any]]`
+    - Upload all files in a folder
+    - `path: str` - Path to the folder to upload
+    - `folderId: Optional[str]` - Destination folder ID
+    - `delay: int` - Time interval between uploads in seconds
+    - `server: Optional[str]` - Regional upload server
 
-- `get_content (contentId: str) -> Dict[str, Any]`
-    - Get information about the content
-    - `contentId: str` - The ID of the file or folder
-
-- `upload (file: str, folderId: str) -> Dict[str, Any]`
-    - Upload a file to Gofile server
-    - `file: str` - Path to file that want to be uploaded
-    - `folderId: str` - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-
-- `upload_folder (path: str, folderId: Optional[str] = None, delay: int = 3) -> List[Dict[str, Any]]`
-    - Upload a folder to Gofile server
-    - `path: str` - Path to folder that you want to be uploaded
-    - `folderId: Optional[str]` - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-    - `delay: int` - Time interval between file uploads (in seconds)
-
-- `create_folder (parentFolderId: str, folderName: str) -> None`
+- `create_folder(parentFolderId: str, folderName: Optional[str] = None, public: Optional[bool] = None) -> Dict[str, Any]`
     - Create a new folder
-    - `parentFolderId: str` - The parent folder ID
-    - `folderName: str` - The name of the folder that wanted to create
+    - `parentFolderId: str` - Parent folder ID
+    - `folderName: Optional[str]` - Custom folder name
+    - `public: Optional[bool]` - Whether folder is publicly accessible
 
-- `set_option (contentId: str, option: str, value: str) -> None`
-    - Set an option on a content
-    - `contentId: str` - The content ID
-    - `option: str` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
-    - `value: str` - The value of the option to be defined.
+- `update_content(contentId: str, attribute: str, attributeValue: Any) -> Dict[str, Any]`
+    - Update an attribute of a file or folder
+    - `contentId: str` - Content ID
+    - `attribute: str` - Attribute to update (`name`, `description`, `tags`, `public`, `expiry`, `password`)
+    - `attributeValue: Any` - New value for the attribute
 
-- `copy_content (contentsId: str, folderIdDest: str) -> None`
-    - Copy one or multiple contents to another folder
-    - `contentsId: str` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-    - `folderIdDest: str` - Destination folder ID
+- `delete_content(contentId: str) -> Dict[str, Any]`
+    - Delete a file or folder
+    - `contentId: str` - Content ID to delete
 
-- `delete_content (contentsId: str) -> None`
-    - Delete one or multiple files/folders
-    - `contentsId: str` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-
-- `done () -> None`
-    - Close the session
-
-_Automatically generated on 2024:01:05:13:41:40_
+- `done() -> None`
+    - Close the HTTP session
 
 
-## Thanks to
-- [gofile](https://github.com/Codec04/gofile) - Base Project & Inspiration ❤️ ([Gofile2](https://github.com/Itz-fork/Gofile2) is a Re-built version of this)
-- [Itz-fork](https://github.com/Itz-fork/) (me) - For Fixing & Improving this project
+## Contact
+You can find me on;
+[Telegram](https://t.me/Bruh_0x), [Bluesky](https://bsky.app/profile/hiruu-sh.bsky.social), [Discord](http://discord.com/users/1182562178155413594)

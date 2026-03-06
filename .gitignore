@@ -2,3 +2,6 @@ dev
 dist
 build
 gofile2.egg-info
+__pycache__
+*.pyc
+.pytest_cache

@@ -1,172 +1,363 @@
-# Original Author: Codec04
-# Re-built by Itz-fork
-# Project: Gofile2
-from asyncio import get_event_loop
-from typing import Any, Dict, List
+# Copyright (c) 2026 Present Itz-fork
+# Author: https://github.com/Itz-fork
+# Project: https://github.com/Itz-fork/Gofile2
+import asyncio
+from typing import Any, Dict, List, Optional
 
 from .gofile2 import Gofile
 
 
 class Sync_Gofile:
-    def __init__(self, token=None):
-        self.gofile = Gofile(token)
-        self.loop = get_event_loop()
+    """
+    Synchronous API wrapper for the Gofile REST API.
 
-    def validate_token(self, token):
+    Wraps the async :class:`Gofile` client using an internal event loop.
+
+    Args:
+        token: API token for authentication.
+
+    Supports use as a context manager:
+
+        with Sync_Gofile(token="...") as g:
+            g.upload("file.txt")
+
+    Note:
+        Cannot be used inside a running async event loop
+        (e.g. Jupyter notebooks or async frameworks).
+        Use :class:`Gofile` directly in those contexts.
+    """
+
+    def __init__(self, token: Optional[str] = None):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+
+        if running_loop is not None:
+            raise RuntimeError(
+                "Sync_Gofile cannot be used inside an already running "
+                "event loop. Use the async Gofile client instead."
+            )
+
+        self._async_client = Gofile(token)
+        self._loop = asyncio.new_event_loop()
+
+    def _run(self, coro):
+        return self._loop.run_until_complete(coro)
+
+    def upload(
+        self,
+        file: str,
+        folderId: Optional[str] = None,
+        server: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Validate Token:
+        Upload a file to Gofile storage.
 
-            Validate gofile token
+        Args:
+            file: Path to the file to upload.
+            folderId: Destination folder ID.
+            server: Regional upload server.
 
-        ### Arguments:
-
-            - `token` - The token to validate
+        Returns:
+            Upload result dict.
         """
-        return self.loop.run_until_complete(self.gofile.validate_token(token))
+        return self._run(self._async_client.upload(file, folderId, server))
 
-    def get_server(self) -> str:
+    def upload_folder(
+        self,
+        path: str,
+        folderId: Optional[str] = None,
+        delay: int = 3,
+        server: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        ## Get Server:
+        Upload all files in a folder to Gofile storage.
 
-            Get the best server available to receive files
+        Args:
+            path: Path to the folder to upload.
+            folderId: Destination folder ID.
+            delay: Time interval between file uploads in seconds.
+            server: Regional upload server.
+
+        Returns:
+            List of upload results for each file.
         """
-        return self.loop.run_until_complete(self.gofile.get_server())
-
-    def get_account(self) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ### Get Account:
-
-            Get information about the account
-        """
-        return self.loop.run_until_complete(self.gofile.get_account())
-
-    def get_content(self, contentId) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ## Get Content:
-
-            Get information about the content
-
-        ### Arguments:
-
-            - `contentId` - The ID of the file or folder
-        """
-        return self.loop.run_until_complete(self.gofile.get_content(contentId))
-
-    def upload(self, file, folderId) -> Dict[str, Any]:
-        """
-        ## Upload:
-
-            Upload a file to Gofile server
-
-        ### Arguments:
-
-            - `file` - Path to file that want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-        """
-        return self.loop.run_until_complete(self.gofile.upload(file, folderId))
-
-    def upload_folder(self, path, folderId=None, delay=3) -> List[Dict[str, Any]]:
-        """
-        ## Upload Folder:
-
-            Upload a folder to Gofile server
-
-        ### Arguments:
-
-            - `path` - Path to folder that you want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-            - `delay` (optional) - Time interval between file uploads (in seconds)
-        """
-        return self.loop.run_until_complete(
-            self.gofile.upload_folder(path, folderId, delay)
+        return self._run(
+            self._async_client.upload_folder(path, folderId, delay, server)
         )
 
-    def create_folder(self, parentFolderId, folderName) -> None:
+    def create_folder(
+        self,
+        parentFolderId: str,
+        folderName: Optional[str] = None,
+        public: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Create a new folder.
 
-        ### Create Folder Function:
+        Args:
+            parentFolderId: The parent folder ID.
+            folderName: Custom folder name.
+            public: Whether the folder should be publicly accessible.
 
-            Create a new folder
-
-        ### Arguments:
-
-            - `parentFolderId` - The parent folder ID
-            - `folderName` - The name of the folder that wanted to create
+        Returns:
+            Folder creation result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.create_folder(parentFolderId, folderName)
+        return self._run(
+            self._async_client.create_folder(parentFolderId, folderName, public)
         )
 
-    def set_option(self, contentId, option, value) -> None:
+    def update_content(
+        self,
+        contentId: str,
+        attribute: str,
+        attributeValue: Any,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Update an attribute of a file or folder.
 
-        ### Set Folder Option Function:
+        Args:
+            contentId: The content ID.
+            attribute: Attribute to update.
+            attributeValue: New value for the attribute.
 
-            Set an option on a content
-
-        ### Arguments:
-
-            - `contentId` - The content ID
-            - `option` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
-            - `value` - The value of the option to be defined.
-                     - For "public", can be "true" or "false".
-                     - For "password", must be the password.
-                     - For "description", must be the description.
-                     - For "expire", must be the expiration date in the form of unix timestamp.
-                     - For "tags", must be a comma seperated list of tags.
-                     - For "directLink", can be "true" or "false". The contentId must be a file.
+        Returns:
+            Update result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.set_option(contentId, option, value)
+        return self._run(
+            self._async_client.update_content(
+                contentId, attribute, attributeValue
+            )
         )
 
-    def copy_content(self, contentsId, folderIdDest) -> None:
+    def delete_content(self, contentId: str) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Delete files or folders.
 
-        ### Copy Content Function:
+        Args:
+            contentId: Comma-separated list of content IDs to delete.
 
-            Copy one or multiple contents to another folder
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-            - `folderIdDest` - Destinatination folder ID
+        Returns:
+            Deletion result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.copy_content(contentsId, folderIdDest)
+        return self._run(self._async_client.delete_content(contentId))
+
+    def get_content(
+        self,
+        contentId: str,
+        password: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get information about a folder and its contents.
+
+        Args:
+            contentId: The content ID (must be a folder ID).
+            password: SHA-256 hash of the password for password-protected content.
+
+        Returns:
+            Content information.
+        """
+        return self._run(self._async_client.get_content(contentId, password))
+
+    def search_content(
+        self,
+        contentId: str,
+        searchedString: str,
+    ) -> Dict[str, Any]:
+        """
+        Search for files and folders within a specific parent folder.
+
+        Args:
+            contentId: The folder ID to search within.
+            searchedString: Search string to match against content names or tags.
+
+        Returns:
+            Search results.
+        """
+        return self._run(
+            self._async_client.search_content(contentId, searchedString)
         )
 
-    def delete_content(self, contentsId) -> None:
+    def copy_content(
+        self,
+        contentsId: str,
+        folderId: str,
+        password: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Copy files or folders to a destination folder.
 
-        ### Delete Content Function:
+        Args:
+            contentsId: Comma-separated list of content IDs to copy.
+            folderId: Destination folder ID.
+            password: SHA-256 hash of the password for password-protected content.
 
-            Delete one or multiple files/folders
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
+        Returns:
+            Copy result.
         """
-        return self.loop.run_until_complete(self.gofile.delete_content(contentsId))
-    
-    def done(self):
-        """
-        ## Done function
+        return self._run(
+            self._async_client.copy_content(contentsId, folderId, password)
+        )
 
-            Close the session
+    def move_content(
+        self,
+        contentsId: str,
+        folderId: str,
+    ) -> Dict[str, Any]:
         """
-        return self.loop.run_until_complete(self.gofile.done())
+        Move files or folders to a destination folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to move.
+            folderId: Destination folder ID.
+
+        Returns:
+            Move result.
+        """
+        return self._run(
+            self._async_client.move_content(contentsId, folderId)
+        )
+
+    def import_content(
+        self,
+        contentsId: str,
+        password: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Import public content into your account's root folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to import.
+            password: SHA-256 hash of the password for password-protected content.
+
+        Returns:
+            Import result.
+        """
+        return self._run(self._async_client.import_content(contentsId, password))
+
+    def create_direct_link(
+        self,
+        contentId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create a direct access link to content.
+
+        Args:
+            contentId: The content ID.
+            expireTime: Unix timestamp when the link should expire.
+            sourceIpsAllowed: List of IP addresses allowed to access the link.
+            domainsAllowed: List of domains allowed to access the link.
+            domainsBlocked: List of domains blocked from accessing the link.
+            auth: List of "user:password" combinations for basic authentication.
+
+        Returns:
+            Direct link creation result.
+        """
+        return self._run(
+            self._async_client.create_direct_link(
+                contentId, expireTime, sourceIpsAllowed, domainsAllowed,
+                domainsBlocked, auth
+            )
+        )
+
+    def update_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a direct link's configuration.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to update.
+            expireTime: New Unix timestamp for link expiration.
+            sourceIpsAllowed: Updated list of allowed IP addresses.
+            domainsAllowed: Updated list of allowed domains.
+            domainsBlocked: Updated list of blocked domains.
+            auth: Updated list of "user:password" combinations.
+
+        Returns:
+            Direct link update result.
+        """
+        return self._run(
+            self._async_client.update_direct_link(
+                contentId, directLinkId, expireTime, sourceIpsAllowed,
+                domainsAllowed, domainsBlocked, auth
+            )
+        )
+
+    def delete_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+    ) -> Dict[str, Any]:
+        """
+        Delete a direct link.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to delete.
+
+        Returns:
+            Direct link deletion result.
+        """
+        return self._run(
+            self._async_client.delete_direct_link(contentId, directLinkId)
+        )
+
+    def get_account_id(self) -> Dict[str, Any]:
+        """
+        Get the account ID associated with the current API token.
+
+        Returns:
+            Account ID information.
+        """
+        return self._run(self._async_client.get_account_id())
+
+    def get_account(self, accountId: str) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific account.
+
+        Args:
+            accountId: The account ID.
+
+        Returns:
+            Account information.
+        """
+        return self._run(self._async_client.get_account(accountId))
+
+    def reset_token(self, accountId: str) -> Dict[str, Any]:
+        """
+        Reset the API token for an account.
+
+        Args:
+            accountId: The account ID.
+
+        Returns:
+            Token reset result.
+        """
+        return self._run(self._async_client.reset_token(accountId))
+
+    def done(self) -> None:
+        """Close the HTTP session and event loop."""
+        if not self._loop.is_closed():
+            self._run(self._async_client.done())
+            self._loop.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.done()
