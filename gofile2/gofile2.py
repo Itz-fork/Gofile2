@@ -2,347 +2,256 @@
 # Re-built by Itz-fork
 # Project: Gofile2
 import os
-from typing import Any, Dict, List
-
-from aiofiles import open as aiopen
+from typing import Any, Dict, List, Optional, Union
 from asyncio import sleep as asleep
+
 from aiohttp import ClientSession, FormData
 
-from .errors import InvalidOption, InvalidPath, InvalidToken, ResponseError
+from .errors import (
+    InvalidOption,
+    InvalidPath,
+    InvalidToken,
+    RateLimitError,
+    ResponseError,
+)
 
 
 class Gofile:
     """
-    ## Gofile Class:
+    Asynchronous API wrapper for the Gofile REST API.
 
-        Base class of Asynchronous Gofile2
+    Args:
+        token: API token for authentication. Can be retrieved from the profile page.
+               Required for all operations except guest uploads.
 
-    ### Arguments:
+    Supports use as an async context manager:
 
-        - `token` (optional for some functions)- The access token of an account. Can be retrieved from the profile page
-
-    ### Functions:
-
-        - `validate_token` - Validate gofile token
-        - `get_server` - Get the best server available to receive files
-        - `get_account` - Get information about the account
-        - `get_content` - Get information about the content
-        - `upload` - Upload a file to Gofile server
-        - `upload_folder` - Upload a folder to Gofile server
-        - `create_folder` - Create a new folder
-        - `set_option` - Set an option on a content
-        - `copy_content` - Copy one or multiple contents to another folder
-        - `delete_content` - Delete one or multiple files/folders
-
-    ### Notes:
-
-        - Functions marked as "Premium function" can only be executed by gofile premium members
+        async with Gofile(token="...") as g:
+            await g.upload("file.txt")
     """
 
-    def __init__(self, token=None):
-        self.api_url = "https://api.gofile.io/"
+    def __init__(self, token: Optional[str] = None):
+        self.api_url = "https://api.gofile.io"
         self.token = token
-        self.session = ClientSession()
+        self._session: Optional[ClientSession] = None
 
-    @classmethod
-    async def initialize(cls, token=None):
-        """
-        ## Create:
-
-            Create a Gofile2 object
-
-        ### Arguments:
-
-            - `token` (optional for some functions)- The access token of an account. Can be retrieved from the profile page
-        """
-        gofile_cls = cls(token)
-        if token is not None:
-            await gofile_cls.validate_token(token)
-        return gofile_cls
+    async def _get_session(self) -> ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = ClientSession()
+        return self._session
 
     async def _api_request(
         self,
         method: str,
-        endpoint: str,
-        params: dict = None,
-        data: FormData = None,
+        url: str,
+        json: Optional[dict] = None,
+        data: Optional[FormData] = None,
         need_token: bool = True,
     ) -> Dict[str, Any]:
         """
-        ## Request function:
+        Make an API request to the Gofile server.
 
-            Make an API request to Gofile server
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE).
+            url: Full URL for the request.
+            json: JSON body for the request.
+            data: Form data for the request (used for file uploads).
+            need_token: Whether a token is required for this request.
+
+        Returns:
+            The 'data' field from the API response.
         """
-        # check if token is required
         if need_token and self.token is None:
             raise InvalidToken()
 
-        # prepare data
-        url = None
-        if endpoint == "uploadFile":
-            server = await self.get_server()
-            url = f"https://{server}.gofile.io/uploadFile"
-        else:
-            url = f"{self.api_url}{endpoint}"
-        if data and self.token:
-            data.add_field("token", self.token)
+        session = await self._get_session()
+        headers: Dict[str, str] = {}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
 
-        # make request
-        resp = None
-        if method == "GET":
-            resp = await self.session.get(url, params=params, data=data)
+        async with session.request(
+            method, url, json=json, data=data, headers=headers
+        ) as resp:
+            if resp.status == 429:
+                raise RateLimitError()
+            result = await resp.json(content_type=None)
 
-        elif method == "POST":
-             resp = await self.session.post(url, data=data)
-
-        elif method == "PUT":
-            resp = await self.session.put(url, data=data)
-
-        elif method == "DELETE":
-             resp = await self.session.delete(url, data=data)
-
-        # convert to json
-        resp = await resp.json()
-
-        # error handling
-        status = resp["status"]
+        status = result.get("status")
         if status == "ok":
-            return resp["data"]
-        else:
-            if "error-" in resp["status"]:
-                error = resp["status"].split("-")[1]
-            else:
-                error = "Response Status is not ok and the reason is unknown"
-            raise ResponseError(error)
+            return result.get("data", {})
 
-    async def validate_token(self, token):
+        raise ResponseError(status or "unknown error")
+
+    async def upload(
+        self,
+        file: str,
+        folderId: Optional[str] = None,
+        server: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Validate function:
+        Upload a file to Gofile storage.
 
-           Validate gofile token
+        Args:
+            file: Path to the file to upload.
+            folderId: Destination folder ID. If omitted, a new folder is created.
+            server: Regional upload server (e.g. 'upload-eu-par' for Paris).
+                    Defaults to automatic server selection via 'upload'.
 
-        ### Arguments:
-
-            - `token` - The token to validate
-        """
-        async with ClientSession() as session:
-            async with session.get(
-                f"{self.api_url}getAccountDetails?token={token}"
-            ) as resp:
-                resp = await resp.json()
-                if resp["status"] == "error-wrongToken":
-                    raise InvalidToken(
-                        "Invalid Gofile Token, Get your Gofile token from --> https://gofile.io/myProfile"
-                    )
-
-    async def get_server(self) -> str:
-        """
-        ## Get Server:
-
-            Get the best server available to receive files
-        """
-        resp = await self._api_request("GET", "getServer", need_token=False)
-        return resp["server"]
-
-    async def get_account(self) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ### Get Account:
-
-            Get information about the account
-        """
-        return await self._api_request("GET", "getAccountDetails")
-
-    async def get_content(self, contentId) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ## Get Content:
-
-            Get information about the content
-
-        ### Arguments:
-
-            - `contentId` - The ID of the file or folder
-        """
-        return await self._api_request(
-            "GET", "getContent", params={"contentId": contentId}
-        )
-
-    async def upload(self, file: str, folderId: str = None) -> Dict[str, Any]:
-        """
-        ## Upload:
-
-            Upload a file to Gofile server
-
-        ### Arguments:
-
-            - `file` - Path to file that want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
+        Returns:
+            Upload result containing file info, parentFolder, and (for guest
+            uploads) guestToken.
         """
         if not os.path.isfile(file):
             raise InvalidPath(f"{file} is not a valid file path")
 
+        if server:
+            url = f"https://{server}.gofile.io/uploadfile"
+        else:
+            url = "https://upload.gofile.io/uploadfile"
+
         data = FormData()
-        async with aiopen(file, "rb") as toup:
-            data.add_field("file", await toup.read(), filename=file)
-        if folderId:
-            # without a token, user can't upload multiple files to the same folder
-            if not self.token:
-                raise InvalidToken()
-            data.add_field("folderId", folderId)
-        
-        return await self._api_request(
-            "POST", "uploadFile", data=data, need_token=False
+        fh = open(file, "rb")
+        data.add_field(
+            "file", fh, filename=os.path.basename(file)
         )
+        if folderId:
+            data.add_field("folderId", folderId)
+
+        try:
+            return await self._api_request(
+                "POST", url, data=data, need_token=False
+            )
+        finally:
+            fh.close()
 
     async def upload_folder(
-        self, path: str, folderId: str = None, delay: int = 3
+        self,
+        path: str,
+        folderId: Optional[str] = None,
+        delay: int = 3,
+        server: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
-        ## Upload Folder:
+        Upload all files in a folder to Gofile storage.
 
-            Upload a folder to Gofile server
+        Args:
+            path: Path to the folder to upload.
+            folderId: Destination folder ID. If omitted, a new folder is created
+                      from the first upload's response.
+            delay: Time interval between file uploads in seconds (to avoid rate limits).
+            server: Regional upload server.
 
-        ### Arguments:
-
-            - `path` - Path to folder that you want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-            - `delay` (optional) - Time interval between file uploads (in seconds)
+        Returns:
+            List of upload results for each file.
         """
         if not os.path.isdir(path):
             raise InvalidPath(f"{path} is not a valid directory")
 
         files = [
-            val
-            for sublist in [
-                [os.path.join(i[0], j) for j in i[2]] for i in os.walk(path)
-            ]
-            for val in sublist
+            os.path.join(root, name)
+            for root, _, names in os.walk(path)
+            for name in names
         ]
 
-        uploaded = []
-        # do first request to collect folder id if folderId is None
-        if folderId is None:
-            file = files.pop(0)
-            upres = await self.upload(file)
-            folderId = upres["parentFolder"]
-            uploaded.append(upres)
+        if not files:
+            return []
 
-        for file in files:
-            upres = await self.upload(file, folderId)
-            uploaded.append(upres)
-            # sleep for x amount of time to avoid potential rate limits / ip bans
-            await asleep(delay)
+        uploaded: List[Dict[str, Any]] = []
+        for i, file_path in enumerate(files):
+            result = await self.upload(
+                file_path, folderId=folderId, server=server
+            )
+            uploaded.append(result)
+            if folderId is None:
+                folderId = result.get("parentFolder")
+            if i < len(files) - 1:
+                await asleep(delay)
 
         return uploaded
 
-    async def create_folder(self, parentFolderId: str, folderName: str)  -> None:
+    async def create_folder(
+        self,
+        parentFolderId: str,
+        folderName: Optional[str] = None,
+        public: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Create a new folder.
 
-        ### Create Folder Function:
+        Args:
+            parentFolderId: The parent folder ID.
+            folderName: Custom folder name. If omitted, a unique name is generated.
+            public: Whether the folder should be publicly accessible.
 
-            Create a new folder
-
-        ### Arguments:
-
-            - `parentFolderId` - The parent folder ID
-            - `folderName` - The name of the folder that wanted to create
+        Returns:
+            Folder creation result.
         """
-        data = FormData()
-        data.add_fields(
-            ("parentFolderId", parentFolderId),
-            ("folderName", folderName),
-        )
-        return await self._api_request("PUT", "createFolder", data=data)
+        url = f"{self.api_url}/contents/createFolder"
+        payload: Dict[str, Union[str, bool]] = {
+            "parentFolderId": parentFolderId
+        }
+        if folderName is not None:
+            payload["folderName"] = folderName
+        if public is not None:
+            payload["public"] = public
+        return await self._api_request("POST", url, json=payload)
 
-    async def set_option(self, contentId: str, option: str, value: str)  -> None:
+    async def update_content(
+        self,
+        contentId: str,
+        attribute: str,
+        attributeValue: Any,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Update an attribute of a file or folder.
 
-        ### Set Folder Option Function:
+        Args:
+            contentId: The content ID.
+            attribute: Attribute to update. One of: 'name', 'description',
+                       'tags', 'public', 'expiry', 'password'.
+            attributeValue: New value for the attribute.
 
-            Set an option on a content
-
-        ### Arguments:
-
-            - `contentId` - The content ID
-            - `option` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
-            - `value` - The value of the option to be defined.
-                     - For "public", can be "true" or "false".
-                     - For "password", must be the password.
-                     - For "description", must be the description.
-                     - For "expire", must be the expiration date in the form of unix timestamp.
-                     - For "tags", must be a comma seperated list of tags.
-                     - For "directLink", can be "true" or "false". The contentId must be a file.
+        Returns:
+            Update result.
         """
-        if option not in [
-            "public",
-            "password",
+        valid_attributes = {
+            "name",
             "description",
-            "expire",
             "tags",
-            "directLink",
-        ]:
-            raise InvalidOption(option)
+            "public",
+            "expiry",
+            "password",
+        }
+        if attribute not in valid_attributes:
+            raise InvalidOption(attribute)
 
-        data = FormData()
-        data.add_fields(
-            ("contentId", contentId),
-            ("option", option),
-            ("value", value),
-        )
-        return await self._api_request("PUT", "setOption", data=data)
+        url = f"{self.api_url}/contents/{contentId}/update"
+        payload = {
+            "attribute": attribute,
+            "attributeValue": attributeValue,
+        }
+        return await self._api_request("PUT", url, json=payload)
 
-    async def copy_content(self, contentsId: str, folderIdDest: str) -> None:
+    async def delete_content(self, contentId: str) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Delete a file or folder.
 
-        ### Copy Content Function:
+        Args:
+            contentId: The ID of the file or folder to delete.
 
-            Copy one or multiple contents to another folder
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-            - `folderIdDest` - Destinatination folder ID
+        Returns:
+            Deletion result.
         """
-        data = FormData()
-        data.add_fields(
-            ("contentsId", contentsId),
-            ("folderIdDest", folderIdDest),
-        )
-        return await self._api_request("PUT", "copyContent", data=data)
+        url = f"{self.api_url}/contents/{contentId}"
+        return await self._api_request("DELETE", url)
 
-    async def delete_content(self, contentsId: str) -> None:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
+    async def done(self) -> None:
+        """Close the HTTP session."""
+        if self._session and not self._session.closed:
+            await self._session.close()
 
-        ### Delete Content Function:
+    async def __aenter__(self):
+        return self
 
-            Delete one or multiple files/folders
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-        """
-        data = FormData()
-        data.add_field("contentsId", contentsId)
-        return await self._api_request("DELETE", "deleteContent", data=data)
-    
-
-    async def done(self):
-        """
-        ## Done function
-
-            Close the session
-        """
-        await self.session.close()
+    async def __aexit__(self, *args):
+        await self.done()

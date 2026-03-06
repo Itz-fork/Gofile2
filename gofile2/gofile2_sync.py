@@ -1,172 +1,140 @@
 # Original Author: Codec04
 # Re-built by Itz-fork
 # Project: Gofile2
-from asyncio import get_event_loop
-from typing import Any, Dict, List
+import asyncio
+from typing import Any, Dict, List, Optional
 
 from .gofile2 import Gofile
 
 
 class Sync_Gofile:
-    def __init__(self, token=None):
-        self.gofile = Gofile(token)
-        self.loop = get_event_loop()
+    """
+    Synchronous API wrapper for the Gofile REST API.
 
-    def validate_token(self, token):
+    Wraps the async :class:`Gofile` client using an internal event loop.
+
+    Args:
+        token: API token for authentication.
+
+    Supports use as a context manager:
+
+        with Sync_Gofile(token="...") as g:
+            g.upload("file.txt")
+    """
+
+    def __init__(self, token: Optional[str] = None):
+        self._async_client = Gofile(token)
+        self._loop = asyncio.new_event_loop()
+
+    def _run(self, coro):
+        return self._loop.run_until_complete(coro)
+
+    def upload(
+        self,
+        file: str,
+        folderId: Optional[str] = None,
+        server: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Validate Token:
+        Upload a file to Gofile storage.
 
-            Validate gofile token
+        Args:
+            file: Path to the file to upload.
+            folderId: Destination folder ID.
+            server: Regional upload server.
 
-        ### Arguments:
-
-            - `token` - The token to validate
+        Returns:
+            Upload result dict.
         """
-        return self.loop.run_until_complete(self.gofile.validate_token(token))
+        return self._run(self._async_client.upload(file, folderId, server))
 
-    def get_server(self) -> str:
+    def upload_folder(
+        self,
+        path: str,
+        folderId: Optional[str] = None,
+        delay: int = 3,
+        server: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        ## Get Server:
+        Upload all files in a folder to Gofile storage.
 
-            Get the best server available to receive files
+        Args:
+            path: Path to the folder to upload.
+            folderId: Destination folder ID.
+            delay: Time interval between file uploads in seconds.
+            server: Regional upload server.
+
+        Returns:
+            List of upload results for each file.
         """
-        return self.loop.run_until_complete(self.gofile.get_server())
-
-    def get_account(self) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ### Get Account:
-
-            Get information about the account
-        """
-        return self.loop.run_until_complete(self.gofile.get_account())
-
-    def get_content(self, contentId) -> Dict[str, Any]:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
-
-        ## Get Content:
-
-            Get information about the content
-
-        ### Arguments:
-
-            - `contentId` - The ID of the file or folder
-        """
-        return self.loop.run_until_complete(self.gofile.get_content(contentId))
-
-    def upload(self, file, folderId) -> Dict[str, Any]:
-        """
-        ## Upload:
-
-            Upload a file to Gofile server
-
-        ### Arguments:
-
-            - `file` - Path to file that want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-        """
-        return self.loop.run_until_complete(self.gofile.upload(file, folderId))
-
-    def upload_folder(self, path, folderId=None, delay=3) -> List[Dict[str, Any]]:
-        """
-        ## Upload Folder:
-
-            Upload a folder to Gofile server
-
-        ### Arguments:
-
-            - `path` - Path to folder that you want to be uploaded
-            - `folderId` (optional) - The ID of a folder. If you're using the folderId, make sure that you initialize the Gofile class with a token
-            - `delay` (optional) - Time interval between file uploads (in seconds)
-        """
-        return self.loop.run_until_complete(
-            self.gofile.upload_folder(path, folderId, delay)
+        return self._run(
+            self._async_client.upload_folder(path, folderId, delay, server)
         )
 
-    def create_folder(self, parentFolderId, folderName) -> None:
+    def create_folder(
+        self,
+        parentFolderId: str,
+        folderName: Optional[str] = None,
+        public: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Create a new folder.
 
-        ### Create Folder Function:
+        Args:
+            parentFolderId: The parent folder ID.
+            folderName: Custom folder name.
+            public: Whether the folder should be publicly accessible.
 
-            Create a new folder
-
-        ### Arguments:
-
-            - `parentFolderId` - The parent folder ID
-            - `folderName` - The name of the folder that wanted to create
+        Returns:
+            Folder creation result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.create_folder(parentFolderId, folderName)
+        return self._run(
+            self._async_client.create_folder(parentFolderId, folderName, public)
         )
 
-    def set_option(self, contentId, option, value) -> None:
+    def update_content(
+        self,
+        contentId: str,
+        attribute: str,
+        attributeValue: Any,
+    ) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Update an attribute of a file or folder.
 
-        ### Set Folder Option Function:
+        Args:
+            contentId: The content ID.
+            attribute: Attribute to update.
+            attributeValue: New value for the attribute.
 
-            Set an option on a content
-
-        ### Arguments:
-
-            - `contentId` - The content ID
-            - `option` - Option that you want to set. Can be "public", "password", "description", "expire" or "tags"
-            - `value` - The value of the option to be defined.
-                     - For "public", can be "true" or "false".
-                     - For "password", must be the password.
-                     - For "description", must be the description.
-                     - For "expire", must be the expiration date in the form of unix timestamp.
-                     - For "tags", must be a comma seperated list of tags.
-                     - For "directLink", can be "true" or "false". The contentId must be a file.
+        Returns:
+            Update result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.set_option(contentId, option, value)
+        return self._run(
+            self._async_client.update_content(
+                contentId, attribute, attributeValue
+            )
         )
 
-    def copy_content(self, contentsId, folderIdDest) -> None:
+    def delete_content(self, contentId: str) -> Dict[str, Any]:
         """
-        ## Premium function
-            This function can only be executed by gofile premium members
+        Delete a file or folder.
 
-        ### Copy Content Function:
+        Args:
+            contentId: The ID of the file or folder to delete.
 
-            Copy one or multiple contents to another folder
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-            - `folderIdDest` - Destinatination folder ID
+        Returns:
+            Deletion result.
         """
-        return self.loop.run_until_complete(
-            self.gofile.copy_content(contentsId, folderIdDest)
-        )
+        return self._run(self._async_client.delete_content(contentId))
 
-    def delete_content(self, contentsId) -> None:
-        """
-        ## Premium function
-            This function can only be executed by gofile premium members
+    def done(self) -> None:
+        """Close the HTTP session and event loop."""
+        if not self._loop.is_closed():
+            self._run(self._async_client.done())
+            self._loop.close()
 
-        ### Delete Content Function:
+    def __enter__(self):
+        return self
 
-            Delete one or multiple files/folders
-
-        ### Arguments:
-
-            - `contentsId` - The ID(s) of the file or folder (Separate each one by comma if there are multiple IDs)
-        """
-        return self.loop.run_until_complete(self.gofile.delete_content(contentsId))
-    
-    def done(self):
-        """
-        ## Done function
-
-            Close the session
-        """
-        return self.loop.run_until_complete(self.gofile.done())
+    def __exit__(self, *args):
+        self.done()

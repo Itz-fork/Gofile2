@@ -15,8 +15,7 @@ if os.path.isfile('requirements.txt'):
         reques = req.read().splitlines()
 else:
     reques = [
-        'aiohttp',
-        'aiofiles'
+        'aiohttp'
     ]
 
 # Readme
