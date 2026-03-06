@@ -117,15 +117,213 @@ class Sync_Gofile:
 
     def delete_content(self, contentId: str) -> Dict[str, Any]:
         """
-        Delete a file or folder.
+        Delete files or folders.
 
         Args:
-            contentId: The ID of the file or folder to delete.
+            contentId: Comma-separated list of content IDs to delete.
 
         Returns:
             Deletion result.
         """
         return self._run(self._async_client.delete_content(contentId))
+
+    def get_content(
+        self,
+        contentId: str,
+        password: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get information about a folder and its contents.
+
+        Args:
+            contentId: The content ID (must be a folder ID).
+            password: SHA-256 hash of the password for password-protected content.
+
+        Returns:
+            Content information.
+        """
+        return self._run(self._async_client.get_content(contentId, password))
+
+    def search_content(
+        self,
+        contentId: str,
+        searchedString: str,
+    ) -> Dict[str, Any]:
+        """
+        Search for files and folders within a specific parent folder.
+
+        Args:
+            contentId: The folder ID to search within.
+            searchedString: Search string to match against content names or tags.
+
+        Returns:
+            Search results.
+        """
+        return self._run(
+            self._async_client.search_content(contentId, searchedString)
+        )
+
+    def copy_content(
+        self,
+        contentsId: str,
+        folderId: str,
+    ) -> Dict[str, Any]:
+        """
+        Copy files or folders to a destination folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to copy.
+            folderId: Destination folder ID.
+
+        Returns:
+            Copy result.
+        """
+        return self._run(
+            self._async_client.copy_content(contentsId, folderId)
+        )
+
+    def move_content(
+        self,
+        contentsId: str,
+        folderId: str,
+    ) -> Dict[str, Any]:
+        """
+        Move files or folders to a destination folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to move.
+            folderId: Destination folder ID.
+
+        Returns:
+            Move result.
+        """
+        return self._run(
+            self._async_client.move_content(contentsId, folderId)
+        )
+
+    def import_content(
+        self,
+        contentsId: str,
+    ) -> Dict[str, Any]:
+        """
+        Import public content into your account's root folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to import.
+
+        Returns:
+            Import result.
+        """
+        return self._run(self._async_client.import_content(contentsId))
+
+    def create_direct_link(
+        self,
+        contentId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create a direct access link to content.
+
+        Args:
+            contentId: The content ID.
+            expireTime: Unix timestamp when the link should expire.
+            sourceIpsAllowed: List of IP addresses allowed to access the link.
+            domainsAllowed: List of domains allowed to access the link.
+            auth: List of "user:password" combinations for basic authentication.
+
+        Returns:
+            Direct link creation result.
+        """
+        return self._run(
+            self._async_client.create_direct_link(
+                contentId, expireTime, sourceIpsAllowed, domainsAllowed, auth
+            )
+        )
+
+    def update_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a direct link's configuration.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to update.
+            expireTime: New Unix timestamp for link expiration.
+            sourceIpsAllowed: Updated list of allowed IP addresses.
+            domainsAllowed: Updated list of allowed domains.
+            auth: Updated list of "user:password" combinations.
+
+        Returns:
+            Direct link update result.
+        """
+        return self._run(
+            self._async_client.update_direct_link(
+                contentId, directLinkId, expireTime, sourceIpsAllowed,
+                domainsAllowed, auth
+            )
+        )
+
+    def delete_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+    ) -> Dict[str, Any]:
+        """
+        Delete a direct link.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to delete.
+
+        Returns:
+            Direct link deletion result.
+        """
+        return self._run(
+            self._async_client.delete_direct_link(contentId, directLinkId)
+        )
+
+    def get_account_id(self) -> Dict[str, Any]:
+        """
+        Get the account ID associated with the current API token.
+
+        Returns:
+            Account ID information.
+        """
+        return self._run(self._async_client.get_account_id())
+
+    def get_account(self, accountId: str) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific account.
+
+        Args:
+            accountId: The account ID.
+
+        Returns:
+            Account information.
+        """
+        return self._run(self._async_client.get_account(accountId))
+
+    def reset_token(self, accountId: str) -> Dict[str, Any]:
+        """
+        Reset the API token for an account.
+
+        Args:
+            accountId: The account ID.
+
+        Returns:
+            Token reset result.
+        """
+        return self._run(self._async_client.reset_token(accountId))
 
     def done(self) -> None:
         """Close the HTTP session and event loop."""

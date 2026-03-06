@@ -230,11 +230,235 @@ class TestGofileDeleteContent:
     @pytest.mark.asyncio
     async def test_delete_content_success(self, mock_aio):
         mock_aio.delete(
-            "https://api.gofile.io/contents/content123",
+            "https://api.gofile.io/contents",
             payload={"status": "ok", "data": {}},
         )
         async with Gofile(token="test-token") as g:
             result = await g.delete_content("content123")
+            assert result == {}
+
+
+class TestGofileGetContent:
+    @pytest.mark.asyncio
+    async def test_get_content_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.get_content("c1")
+
+    @pytest.mark.asyncio
+    async def test_get_content_success(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/contents/folder123",
+            payload={
+                "status": "ok",
+                "data": {"id": "folder123", "type": "folder", "name": "My Folder"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.get_content("folder123")
+            assert result["id"] == "folder123"
+            assert result["type"] == "folder"
+
+    @pytest.mark.asyncio
+    async def test_get_content_with_password(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/contents/folder123?password=abc123hash",
+            payload={
+                "status": "ok",
+                "data": {"id": "folder123", "type": "folder"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.get_content("folder123", password="abc123hash")
+            assert result["id"] == "folder123"
+
+
+class TestGofileSearchContent:
+    @pytest.mark.asyncio
+    async def test_search_content_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.search_content("folder1", "test")
+
+    @pytest.mark.asyncio
+    async def test_search_content_success(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/contents/search?contentId=folder1&searchedString=test",
+            payload={
+                "status": "ok",
+                "data": {"contents": [{"id": "file1", "name": "test.txt"}]},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.search_content("folder1", "test")
+            assert result["contents"][0]["name"] == "test.txt"
+
+
+class TestGofileCopyContent:
+    @pytest.mark.asyncio
+    async def test_copy_content_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.copy_content("c1", "folder1")
+
+    @pytest.mark.asyncio
+    async def test_copy_content_success(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/copy",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.copy_content("c1,c2", "folder1")
+            assert result == {}
+
+
+class TestGofileMoveContent:
+    @pytest.mark.asyncio
+    async def test_move_content_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.move_content("c1", "folder1")
+
+    @pytest.mark.asyncio
+    async def test_move_content_success(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/move",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.move_content("c1,c2", "folder1")
+            assert result == {}
+
+
+class TestGofileImportContent:
+    @pytest.mark.asyncio
+    async def test_import_content_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.import_content("c1")
+
+    @pytest.mark.asyncio
+    async def test_import_content_success(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/import",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.import_content("c1,c2")
+            assert result == {}
+
+
+class TestGofileDirectLinks:
+    @pytest.mark.asyncio
+    async def test_create_direct_link_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.create_direct_link("c1")
+
+    @pytest.mark.asyncio
+    async def test_create_direct_link_success(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/content123/directlinks",
+            payload={
+                "status": "ok",
+                "data": {"directLinkId": "link1", "directLink": "https://example.com/link1"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.create_direct_link("content123", expireTime=1704067200)
+            assert result["directLinkId"] == "link1"
+
+    @pytest.mark.asyncio
+    async def test_update_direct_link_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.update_direct_link("c1", "link1")
+
+    @pytest.mark.asyncio
+    async def test_update_direct_link_success(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/content123/directlinks/link1",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.update_direct_link(
+                "content123", "link1",
+                sourceIpsAllowed=["192.168.1.1"],
+                domainsAllowed=["example.com"],
+            )
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_delete_direct_link_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.delete_direct_link("c1", "link1")
+
+    @pytest.mark.asyncio
+    async def test_delete_direct_link_success(self, mock_aio):
+        mock_aio.delete(
+            "https://api.gofile.io/contents/content123/directlinks/link1",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.delete_direct_link("content123", "link1")
+            assert result == {}
+
+
+class TestGofileAccount:
+    @pytest.mark.asyncio
+    async def test_get_account_id_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.get_account_id()
+
+    @pytest.mark.asyncio
+    async def test_get_account_id_success(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/accounts/getid",
+            payload={
+                "status": "ok",
+                "data": {"id": "account123"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.get_account_id()
+            assert result["id"] == "account123"
+
+    @pytest.mark.asyncio
+    async def test_get_account_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.get_account(accountId="account123")
+
+    @pytest.mark.asyncio
+    async def test_get_account_success(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/accounts/account123",
+            payload={
+                "status": "ok",
+                "data": {"id": "account123", "email": "test@example.com"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.get_account("account123")
+            assert result["id"] == "account123"
+            assert result["email"] == "test@example.com"
+
+    @pytest.mark.asyncio
+    async def test_reset_token_no_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.reset_token("account123")
+
+    @pytest.mark.asyncio
+    async def test_reset_token_success(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/accounts/account123/resettoken",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.reset_token("account123")
             assert result == {}
 
 
@@ -291,6 +515,61 @@ class TestSyncGofile:
         with Sync_Gofile() as g:
             with pytest.raises(InvalidToken):
                 g.delete_content("c1")
+
+    def test_sync_get_content_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.get_content("c1")
+
+    def test_sync_search_content_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.search_content("c1", "test")
+
+    def test_sync_copy_content_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.copy_content("c1", "folder1")
+
+    def test_sync_move_content_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.move_content("c1", "folder1")
+
+    def test_sync_import_content_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.import_content("c1")
+
+    def test_sync_create_direct_link_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.create_direct_link("c1")
+
+    def test_sync_update_direct_link_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.update_direct_link("c1", "link1")
+
+    def test_sync_delete_direct_link_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.delete_direct_link("c1", "link1")
+
+    def test_sync_get_account_id_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.get_account_id()
+
+    def test_sync_get_account_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.get_account("account123")
+
+    def test_sync_reset_token_no_token(self):
+        with Sync_Gofile() as g:
+            with pytest.raises(InvalidToken):
+                g.reset_token("account123")
 
 
 # --- Error Tests ---

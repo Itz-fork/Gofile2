@@ -46,6 +46,7 @@ class Gofile:
         url: str,
         json: Optional[dict] = None,
         data: Optional[FormData] = None,
+        params: Optional[dict] = None,
         need_token: bool = True,
     ) -> Dict[str, Any]:
         """
@@ -56,6 +57,7 @@ class Gofile:
             url: Full URL for the request.
             json: JSON body for the request.
             data: Form data for the request (used for file uploads).
+            params: Query parameters for the request.
             need_token: Whether a token is required for this request.
 
         Returns:
@@ -70,7 +72,7 @@ class Gofile:
             headers["Authorization"] = f"Bearer {self.token}"
 
         async with session.request(
-            method, url, json=json, data=data, headers=headers
+            method, url, json=json, data=data, params=params, headers=headers
         ) as resp:
             if resp.status == 429:
                 raise RateLimitError()
@@ -234,16 +236,238 @@ class Gofile:
 
     async def delete_content(self, contentId: str) -> Dict[str, Any]:
         """
-        Delete a file or folder.
+        Delete files or folders.
 
         Args:
-            contentId: The ID of the file or folder to delete.
+            contentId: Comma-separated list of content IDs to delete.
 
         Returns:
             Deletion result.
         """
+        url = f"{self.api_url}/contents"
+        payload = {"contentsId": contentId}
+        return await self._api_request("DELETE", url, json=payload)
+
+    async def get_content(
+        self,
+        contentId: str,
+        password: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get information about a folder and its contents.
+
+        Args:
+            contentId: The content ID (must be a folder ID).
+            password: SHA-256 hash of the password for password-protected content.
+
+        Returns:
+            Content information including metadata and file listings.
+        """
         url = f"{self.api_url}/contents/{contentId}"
+        params: Dict[str, str] = {}
+        if password is not None:
+            params["password"] = password
+        return await self._api_request("GET", url, params=params or None)
+
+    async def search_content(
+        self,
+        contentId: str,
+        searchedString: str,
+    ) -> Dict[str, Any]:
+        """
+        Search for files and folders within a specific parent folder.
+
+        Args:
+            contentId: The folder ID to search within.
+            searchedString: Search string to match against content names or tags.
+
+        Returns:
+            Search results.
+        """
+        url = f"{self.api_url}/contents/search"
+        params = {"contentId": contentId, "searchedString": searchedString}
+        return await self._api_request("GET", url, params=params)
+
+    async def copy_content(
+        self,
+        contentsId: str,
+        folderId: str,
+    ) -> Dict[str, Any]:
+        """
+        Copy files or folders to a destination folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to copy.
+            folderId: Destination folder ID.
+
+        Returns:
+            Copy result.
+        """
+        url = f"{self.api_url}/contents/copy"
+        payload = {"contentsId": contentsId, "folderId": folderId}
+        return await self._api_request("POST", url, json=payload)
+
+    async def move_content(
+        self,
+        contentsId: str,
+        folderId: str,
+    ) -> Dict[str, Any]:
+        """
+        Move files or folders to a destination folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to move.
+            folderId: Destination folder ID.
+
+        Returns:
+            Move result.
+        """
+        url = f"{self.api_url}/contents/move"
+        payload = {"contentsId": contentsId, "folderId": folderId}
+        return await self._api_request("PUT", url, json=payload)
+
+    async def import_content(
+        self,
+        contentsId: str,
+    ) -> Dict[str, Any]:
+        """
+        Import public content into your account's root folder.
+
+        Args:
+            contentsId: Comma-separated list of content IDs to import.
+
+        Returns:
+            Import result.
+        """
+        url = f"{self.api_url}/contents/import"
+        payload = {"contentsId": contentsId}
+        return await self._api_request("POST", url, json=payload)
+
+    # --- Direct Links ---
+
+    async def create_direct_link(
+        self,
+        contentId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Create a direct access link to content.
+
+        Args:
+            contentId: The content ID.
+            expireTime: Unix timestamp when the link should expire.
+            sourceIpsAllowed: List of IP addresses allowed to access the link.
+            domainsAllowed: List of domains allowed to access the link.
+            auth: List of "user:password" combinations for basic authentication.
+
+        Returns:
+            Direct link creation result.
+        """
+        url = f"{self.api_url}/contents/{contentId}/directlinks"
+        payload: Dict[str, Any] = {}
+        if expireTime is not None:
+            payload["expireTime"] = expireTime
+        if sourceIpsAllowed is not None:
+            payload["sourceIpsAllowed"] = sourceIpsAllowed
+        if domainsAllowed is not None:
+            payload["domainsAllowed"] = domainsAllowed
+        if auth is not None:
+            payload["auth"] = auth
+        return await self._api_request("POST", url, json=payload)
+
+    async def update_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Update a direct link's configuration.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to update.
+            expireTime: New Unix timestamp for link expiration.
+            sourceIpsAllowed: Updated list of allowed IP addresses.
+            domainsAllowed: Updated list of allowed domains.
+            auth: Updated list of "user:password" combinations.
+
+        Returns:
+            Direct link update result.
+        """
+        url = f"{self.api_url}/contents/{contentId}/directlinks/{directLinkId}"
+        payload: Dict[str, Any] = {}
+        if expireTime is not None:
+            payload["expireTime"] = expireTime
+        if sourceIpsAllowed is not None:
+            payload["sourceIpsAllowed"] = sourceIpsAllowed
+        if domainsAllowed is not None:
+            payload["domainsAllowed"] = domainsAllowed
+        if auth is not None:
+            payload["auth"] = auth
+        return await self._api_request("PUT", url, json=payload)
+
+    async def delete_direct_link(
+        self,
+        contentId: str,
+        directLinkId: str,
+    ) -> Dict[str, Any]:
+        """
+        Delete a direct link.
+
+        Args:
+            contentId: The content ID.
+            directLinkId: The direct link ID to delete.
+
+        Returns:
+            Direct link deletion result.
+        """
+        url = f"{self.api_url}/contents/{contentId}/directlinks/{directLinkId}"
         return await self._api_request("DELETE", url)
+
+    # --- Account ---
+
+    async def get_account_id(self) -> Dict[str, Any]:
+        """
+        Get the account ID associated with the current API token.
+
+        Returns:
+            Account ID information.
+        """
+        url = f"{self.api_url}/accounts/getid"
+        return await self._api_request("GET", url)
+
+    async def get_account(self, accountId: str) -> Dict[str, Any]:
+        """
+        Get detailed information about a specific account.
+
+        Args:
+            accountId: The account ID to retrieve information for.
+
+        Returns:
+            Account information.
+        """
+        url = f"{self.api_url}/accounts/{accountId}"
+        return await self._api_request("GET", url)
+
+    async def reset_token(self, accountId: str) -> Dict[str, Any]:
+        """
+        Reset the API token for an account. A new token will be sent via email.
+
+        Args:
+            accountId: The account ID.
+
+        Returns:
+            Token reset result.
+        """
+        url = f"{self.api_url}/accounts/{accountId}/resettoken"
+        return await self._api_request("POST", url)
 
     async def done(self) -> None:
         """Close the HTTP session."""
