@@ -156,6 +156,6 @@ await g.upload(file="file.txt", server="upload-eu-par")
     - Close the HTTP session
 
 
-## Thanks to
-- [gofile](https://github.com/Codec04/gofile) - Base Project & Inspiration ❤️ ([Gofile2](https://github.com/Itz-fork/Gofile2) is a Re-built version of this)
-- [Itz-fork](https://github.com/Itz-fork/) (me) - For Fixing & Improving this project
+## Contact
+You can find me on;
+[Telegram](https://t.me/Bruh_0x), [Bluesky](https://bsky.app/profile/hiruu-sh.bsky.social), [Discord](http://discord.com/users/1182562178155413594)
