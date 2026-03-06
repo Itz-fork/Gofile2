@@ -50,6 +50,17 @@ g_a = Sync_Gofile(token="your_gofile_api_token_here")
 ```
 All API requests require authentication via a bearer token, which is sent automatically in the `Authorization` header. Tokens can be generated from the [profile page](https://gofile.io/myProfile). Guest uploads (without a token) are supported for the `upload` method only.
 
+The token can be set at initialization or passed per-method call. When both are provided, the per-method token takes priority. You can also initialize without a token and pass it to individual method calls:
+
+```python
+# Initialize without a token
+g_a = Gofile()
+
+# Pass token per method call
+await g_a.create_folder("parent_id", token="your_token")
+await g_a.get_content("folder_id", token="another_token")
+```
+
 **3. Everything Done! Now Play with it!**
 
 **Asynchronous version with context manager (recommended)**
@@ -108,6 +119,9 @@ async with Gofile(token="your_token") as g:
 
     # Reset API token (new token will be sent via email)
     await g.reset_token(accountId="account_id")
+
+    # Any method also accepts a per-call token to override the instance token
+    await g.get_content(contentId="folder_id", token="different_token")
 ```
 
 **Synchronous version with context manager**
@@ -129,6 +143,9 @@ with Sync_Gofile(token="your_token") as g:
     g.get_account_id()
     g.get_account(accountId="account_id")
     g.reset_token(accountId="account_id")
+
+    # Any method also accepts a per-call token to override the instance token
+    g.get_content(contentId="folder_id", token="different_token")
 ```
 
 **Manual session management**
@@ -158,6 +175,32 @@ By default, uploads go through `upload.gofile.io` which automatically selects th
 await g.upload(file="file.txt", server="upload-eu-par")
 ```
 
+# Multi-Account Usage
+
+All methods accept an optional `token` parameter, allowing you to use multiple accounts with a single client instance. The per-method token overrides the instance token for that specific call:
+
+**Asynchronous version**
+```python
+async with Gofile() as g:
+    # Operate on account A
+    await g.create_folder("parent_id", folderName="Folder A", token="token_account_a")
+    await g.upload(file="file.txt", folderId="folder_id", token="token_account_a")
+
+    # Operate on account B without reinitializing
+    await g.create_folder("parent_id", folderName="Folder B", token="token_account_b")
+    await g.get_content(contentId="folder_id", token="token_account_b")
+```
+
+**Synchronous version**
+```python
+with Sync_Gofile() as g:
+    # Operate on account A
+    g.create_folder("parent_id", folderName="Folder A", token="token_account_a")
+
+    # Operate on account B without reinitializing
+    g.get_content(contentId="folder_id", token="token_account_b")
+```
+
 # Docs
 
 - `Gofile(token: Optional[str] = None)`
@@ -168,62 +211,72 @@ await g.upload(file="file.txt", server="upload-eu-par")
     - Create a sync Gofile2 client
     - `token: Optional[str]` - API token for authentication
 
-- `upload(file: str, folderId: Optional[str] = None, server: Optional[str] = None) -> Dict[str, Any]`
+- `upload(file: str, folderId: Optional[str] = None, server: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Upload a file to Gofile storage
     - `file: str` - Path to file to upload
     - `folderId: Optional[str]` - Destination folder ID
     - `server: Optional[str]` - Regional upload server
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `upload_folder(path: str, folderId: Optional[str] = None, delay: int = 3, server: Optional[str] = None) -> List[Dict[str, Any]]`
+- `upload_folder(path: str, folderId: Optional[str] = None, delay: int = 3, server: Optional[str] = None, token: Optional[str] = None) -> List[Dict[str, Any]]`
     - Upload all files in a folder
     - `path: str` - Path to the folder to upload
     - `folderId: Optional[str]` - Destination folder ID
     - `delay: int` - Time interval between uploads in seconds
     - `server: Optional[str]` - Regional upload server
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `create_folder(parentFolderId: str, folderName: Optional[str] = None, public: Optional[bool] = None) -> Dict[str, Any]`
+- `create_folder(parentFolderId: str, folderName: Optional[str] = None, public: Optional[bool] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Create a new folder
     - `parentFolderId: str` - Parent folder ID
     - `folderName: Optional[str]` - Custom folder name
     - `public: Optional[bool]` - Whether folder is publicly accessible
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `update_content(contentId: str, attribute: str, attributeValue: Any) -> Dict[str, Any]`
+- `update_content(contentId: str, attribute: str, attributeValue: Any, token: Optional[str] = None) -> Dict[str, Any]`
     - Update an attribute of a file or folder
     - `contentId: str` - Content ID
     - `attribute: str` - Attribute to update (`name`, `description`, `tags`, `public`, `expiry`, `password`)
     - `attributeValue: Any` - New value for the attribute
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `delete_content(contentId: str) -> Dict[str, Any]`
+- `delete_content(contentId: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Delete a file or folder
     - `contentId: str` - Comma-separated list of content IDs to delete
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `get_content(contentId: str, password: Optional[str] = None) -> Dict[str, Any]`
+- `get_content(contentId: str, password: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Get information about a folder and its contents
     - `contentId: str` - Content ID (must be a folder ID)
     - `password: Optional[str]` - SHA-256 hash of the password for password-protected content
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `search_content(contentId: str, searchedString: str) -> Dict[str, Any]`
+- `search_content(contentId: str, searchedString: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Search for files and folders within a specific parent folder
     - `contentId: str` - Folder ID to search within
     - `searchedString: str` - Search string to match against content names or tags
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `copy_content(contentsId: str, folderId: str, password: Optional[str] = None) -> Dict[str, Any]`
+- `copy_content(contentsId: str, folderId: str, password: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Copy files or folders to a destination folder
     - `contentsId: str` - Comma-separated list of content IDs to copy
     - `folderId: str` - Destination folder ID
     - `password: Optional[str]` - SHA-256 hash of the password for password-protected content
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `move_content(contentsId: str, folderId: str) -> Dict[str, Any]`
+- `move_content(contentsId: str, folderId: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Move files or folders to a destination folder
     - `contentsId: str` - Comma-separated list of content IDs to move
     - `folderId: str` - Destination folder ID
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `import_content(contentsId: str, password: Optional[str] = None) -> Dict[str, Any]`
+- `import_content(contentsId: str, password: Optional[str] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Import public content into your account's root folder
     - `contentsId: str` - Comma-separated list of content IDs to import
     - `password: Optional[str]` - SHA-256 hash of the password for password-protected content
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `create_direct_link(contentId: str, expireTime: Optional[int] = None, sourceIpsAllowed: Optional[List[str]] = None, domainsAllowed: Optional[List[str]] = None, domainsBlocked: Optional[List[str]] = None, auth: Optional[List[str]] = None) -> Dict[str, Any]`
+- `create_direct_link(contentId: str, expireTime: Optional[int] = None, sourceIpsAllowed: Optional[List[str]] = None, domainsAllowed: Optional[List[str]] = None, domainsBlocked: Optional[List[str]] = None, auth: Optional[List[str]] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Create a direct access link to content
     - `contentId: str` - Content ID
     - `expireTime: Optional[int]` - Unix timestamp when the link should expire
@@ -231,8 +284,9 @@ await g.upload(file="file.txt", server="upload-eu-par")
     - `domainsAllowed: Optional[List[str]]` - List of domains allowed to access the link
     - `domainsBlocked: Optional[List[str]]` - List of domains blocked from accessing the link
     - `auth: Optional[List[str]]` - List of "user:password" combinations for basic authentication
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `update_direct_link(contentId: str, directLinkId: str, expireTime: Optional[int] = None, sourceIpsAllowed: Optional[List[str]] = None, domainsAllowed: Optional[List[str]] = None, domainsBlocked: Optional[List[str]] = None, auth: Optional[List[str]] = None) -> Dict[str, Any]`
+- `update_direct_link(contentId: str, directLinkId: str, expireTime: Optional[int] = None, sourceIpsAllowed: Optional[List[str]] = None, domainsAllowed: Optional[List[str]] = None, domainsBlocked: Optional[List[str]] = None, auth: Optional[List[str]] = None, token: Optional[str] = None) -> Dict[str, Any]`
     - Update a direct link's configuration
     - `contentId: str` - Content ID
     - `directLinkId: str` - Direct link ID to update
@@ -241,22 +295,27 @@ await g.upload(file="file.txt", server="upload-eu-par")
     - `domainsAllowed: Optional[List[str]]` - Updated list of allowed domains
     - `domainsBlocked: Optional[List[str]]` - Updated list of blocked domains
     - `auth: Optional[List[str]]` - Updated list of "user:password" combinations
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `delete_direct_link(contentId: str, directLinkId: str) -> Dict[str, Any]`
+- `delete_direct_link(contentId: str, directLinkId: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Delete a direct link
     - `contentId: str` - Content ID
     - `directLinkId: str` - Direct link ID to delete
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `get_account_id() -> Dict[str, Any]`
+- `get_account_id(token: Optional[str] = None) -> Dict[str, Any]`
     - Get the account ID associated with the current API token
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `get_account(accountId: str) -> Dict[str, Any]`
+- `get_account(accountId: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Get detailed information about a specific account
     - `accountId: str` - Account ID to retrieve information for
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
-- `reset_token(accountId: str) -> Dict[str, Any]`
+- `reset_token(accountId: str, token: Optional[str] = None) -> Dict[str, Any]`
     - Reset the API token for an account. A new token will be sent via email
     - `accountId: str` - Account ID
+    - `token: Optional[str]` - Per-request token (overrides instance token)
 
 - `done() -> None`
     - Close the HTTP session
