@@ -5,4 +5,4 @@
 from .gofile2 import Gofile
 from .gofile2_sync import Sync_Gofile
 
-__version__ = "v2.0.0"
+__version__ = "v2.0.1"
