@@ -264,10 +264,10 @@ class Gofile:
             Content information including metadata and file listings.
         """
         url = f"{self.api_url}/contents/{contentId}"
-        params: Dict[str, str] = {}
+        params: Optional[Dict[str, str]] = None
         if password is not None:
-            params["password"] = password
-        return await self._api_request("GET", url, params=params or None)
+            params = {"password": password}
+        return await self._api_request("GET", url, params=params)
 
     async def search_content(
         self,
@@ -345,6 +345,24 @@ class Gofile:
 
     # --- Direct Links ---
 
+    @staticmethod
+    def _build_direct_link_payload(
+        expireTime: Optional[int] = None,
+        sourceIpsAllowed: Optional[List[str]] = None,
+        domainsAllowed: Optional[List[str]] = None,
+        auth: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {}
+        if expireTime is not None:
+            payload["expireTime"] = expireTime
+        if sourceIpsAllowed is not None:
+            payload["sourceIpsAllowed"] = sourceIpsAllowed
+        if domainsAllowed is not None:
+            payload["domainsAllowed"] = domainsAllowed
+        if auth is not None:
+            payload["auth"] = auth
+        return payload
+
     async def create_direct_link(
         self,
         contentId: str,
@@ -367,15 +385,9 @@ class Gofile:
             Direct link creation result.
         """
         url = f"{self.api_url}/contents/{contentId}/directlinks"
-        payload: Dict[str, Any] = {}
-        if expireTime is not None:
-            payload["expireTime"] = expireTime
-        if sourceIpsAllowed is not None:
-            payload["sourceIpsAllowed"] = sourceIpsAllowed
-        if domainsAllowed is not None:
-            payload["domainsAllowed"] = domainsAllowed
-        if auth is not None:
-            payload["auth"] = auth
+        payload = self._build_direct_link_payload(
+            expireTime, sourceIpsAllowed, domainsAllowed, auth
+        )
         return await self._api_request("POST", url, json=payload)
 
     async def update_direct_link(
@@ -402,15 +414,9 @@ class Gofile:
             Direct link update result.
         """
         url = f"{self.api_url}/contents/{contentId}/directlinks/{directLinkId}"
-        payload: Dict[str, Any] = {}
-        if expireTime is not None:
-            payload["expireTime"] = expireTime
-        if sourceIpsAllowed is not None:
-            payload["sourceIpsAllowed"] = sourceIpsAllowed
-        if domainsAllowed is not None:
-            payload["domainsAllowed"] = domainsAllowed
-        if auth is not None:
-            payload["auth"] = auth
+        payload = self._build_direct_link_payload(
+            expireTime, sourceIpsAllowed, domainsAllowed, auth
+        )
         return await self._api_request("PUT", url, json=payload)
 
     async def delete_direct_link(
