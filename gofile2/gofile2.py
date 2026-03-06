@@ -30,6 +30,16 @@ class Gofile:
             await g.upload("file.txt")
     """
 
+    VALID_SERVERS = {
+        "upload",
+        "upload-eu-par",
+        "upload-na-phx",
+        "upload-ap-sgp",
+        "upload-ap-hkg",
+        "upload-ap-tyo",
+        "upload-sa-sao",
+    }
+
     def __init__(self, token: Optional[str] = None):
         self.api_url = "https://api.gofile.io"
         self.token = token
@@ -107,6 +117,8 @@ class Gofile:
             raise InvalidPath(f"{file} is not a valid file path")
 
         if server:
+            if server not in self.VALID_SERVERS:
+                raise InvalidOption(server)
             url = f"https://{server}.gofile.io/uploadfile"
         else:
             url = "https://upload.gofile.io/uploadfile"
@@ -292,6 +304,7 @@ class Gofile:
         self,
         contentsId: str,
         folderId: str,
+        password: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Copy files or folders to a destination folder.
@@ -299,12 +312,15 @@ class Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to copy.
             folderId: Destination folder ID.
+            password: SHA-256 hash of the password for password-protected content.
 
         Returns:
             Copy result.
         """
         url = f"{self.api_url}/contents/copy"
-        payload = {"contentsId": contentsId, "folderId": folderId}
+        payload: Dict[str, str] = {"contentsId": contentsId, "folderId": folderId}
+        if password is not None:
+            payload["password"] = password
         return await self._api_request("POST", url, json=payload)
 
     async def move_content(
@@ -329,18 +345,22 @@ class Gofile:
     async def import_content(
         self,
         contentsId: str,
+        password: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Import public content into your account's root folder.
 
         Args:
             contentsId: Comma-separated list of content IDs to import.
+            password: SHA-256 hash of the password for password-protected content.
 
         Returns:
             Import result.
         """
         url = f"{self.api_url}/contents/import"
-        payload = {"contentsId": contentsId}
+        payload: Dict[str, str] = {"contentsId": contentsId}
+        if password is not None:
+            payload["password"] = password
         return await self._api_request("POST", url, json=payload)
 
     # --- Direct Links ---
@@ -350,6 +370,7 @@ class Gofile:
         expireTime: Optional[int] = None,
         sourceIpsAllowed: Optional[List[str]] = None,
         domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {}
@@ -359,6 +380,8 @@ class Gofile:
             payload["sourceIpsAllowed"] = sourceIpsAllowed
         if domainsAllowed is not None:
             payload["domainsAllowed"] = domainsAllowed
+        if domainsBlocked is not None:
+            payload["domainsBlocked"] = domainsBlocked
         if auth is not None:
             payload["auth"] = auth
         return payload
@@ -369,6 +392,7 @@ class Gofile:
         expireTime: Optional[int] = None,
         sourceIpsAllowed: Optional[List[str]] = None,
         domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
@@ -379,6 +403,7 @@ class Gofile:
             expireTime: Unix timestamp when the link should expire.
             sourceIpsAllowed: List of IP addresses allowed to access the link.
             domainsAllowed: List of domains allowed to access the link.
+            domainsBlocked: List of domains blocked from accessing the link.
             auth: List of "user:password" combinations for basic authentication.
 
         Returns:
@@ -386,7 +411,7 @@ class Gofile:
         """
         url = f"{self.api_url}/contents/{contentId}/directlinks"
         payload = self._build_direct_link_payload(
-            expireTime, sourceIpsAllowed, domainsAllowed, auth
+            expireTime, sourceIpsAllowed, domainsAllowed, domainsBlocked, auth
         )
         return await self._api_request("POST", url, json=payload)
 
@@ -397,6 +422,7 @@ class Gofile:
         expireTime: Optional[int] = None,
         sourceIpsAllowed: Optional[List[str]] = None,
         domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
@@ -408,6 +434,7 @@ class Gofile:
             expireTime: New Unix timestamp for link expiration.
             sourceIpsAllowed: Updated list of allowed IP addresses.
             domainsAllowed: Updated list of allowed domains.
+            domainsBlocked: Updated list of blocked domains.
             auth: Updated list of "user:password" combinations.
 
         Returns:
@@ -415,7 +442,7 @@ class Gofile:
         """
         url = f"{self.api_url}/contents/{contentId}/directlinks/{directLinkId}"
         payload = self._build_direct_link_payload(
-            expireTime, sourceIpsAllowed, domainsAllowed, auth
+            expireTime, sourceIpsAllowed, domainsAllowed, domainsBlocked, auth
         )
         return await self._api_request("PUT", url, json=payload)
 

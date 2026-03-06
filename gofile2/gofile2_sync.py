@@ -167,6 +167,7 @@ class Sync_Gofile:
         self,
         contentsId: str,
         folderId: str,
+        password: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Copy files or folders to a destination folder.
@@ -174,12 +175,13 @@ class Sync_Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to copy.
             folderId: Destination folder ID.
+            password: SHA-256 hash of the password for password-protected content.
 
         Returns:
             Copy result.
         """
         return self._run(
-            self._async_client.copy_content(contentsId, folderId)
+            self._async_client.copy_content(contentsId, folderId, password)
         )
 
     def move_content(
@@ -204,17 +206,19 @@ class Sync_Gofile:
     def import_content(
         self,
         contentsId: str,
+        password: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Import public content into your account's root folder.
 
         Args:
             contentsId: Comma-separated list of content IDs to import.
+            password: SHA-256 hash of the password for password-protected content.
 
         Returns:
             Import result.
         """
-        return self._run(self._async_client.import_content(contentsId))
+        return self._run(self._async_client.import_content(contentsId, password))
 
     def create_direct_link(
         self,
@@ -222,6 +226,7 @@ class Sync_Gofile:
         expireTime: Optional[int] = None,
         sourceIpsAllowed: Optional[List[str]] = None,
         domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
@@ -232,6 +237,7 @@ class Sync_Gofile:
             expireTime: Unix timestamp when the link should expire.
             sourceIpsAllowed: List of IP addresses allowed to access the link.
             domainsAllowed: List of domains allowed to access the link.
+            domainsBlocked: List of domains blocked from accessing the link.
             auth: List of "user:password" combinations for basic authentication.
 
         Returns:
@@ -239,7 +245,8 @@ class Sync_Gofile:
         """
         return self._run(
             self._async_client.create_direct_link(
-                contentId, expireTime, sourceIpsAllowed, domainsAllowed, auth
+                contentId, expireTime, sourceIpsAllowed, domainsAllowed,
+                domainsBlocked, auth
             )
         )
 
@@ -250,6 +257,7 @@ class Sync_Gofile:
         expireTime: Optional[int] = None,
         sourceIpsAllowed: Optional[List[str]] = None,
         domainsAllowed: Optional[List[str]] = None,
+        domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
@@ -261,6 +269,7 @@ class Sync_Gofile:
             expireTime: New Unix timestamp for link expiration.
             sourceIpsAllowed: Updated list of allowed IP addresses.
             domainsAllowed: Updated list of allowed domains.
+            domainsBlocked: Updated list of blocked domains.
             auth: Updated list of "user:password" combinations.
 
         Returns:
@@ -269,7 +278,7 @@ class Sync_Gofile:
         return self._run(
             self._async_client.update_direct_link(
                 contentId, directLinkId, expireTime, sourceIpsAllowed,
-                domainsAllowed, auth
+                domainsAllowed, domainsBlocked, auth
             )
         )
 

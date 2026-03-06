@@ -107,6 +107,12 @@ class TestGofileUpload:
             assert result["fileId"] == "file123"
 
     @pytest.mark.asyncio
+    async def test_upload_invalid_server(self, tmp_file):
+        async with Gofile() as g:
+            with pytest.raises(InvalidOption):
+                await g.upload(tmp_file, server="invalid-server")
+
+    @pytest.mark.asyncio
     async def test_upload_api_error(self, mock_aio, tmp_file):
         mock_aio.post(
             "https://upload.gofile.io/uploadfile",
@@ -311,6 +317,16 @@ class TestGofileCopyContent:
             result = await g.copy_content("c1,c2", "folder1")
             assert result == {}
 
+    @pytest.mark.asyncio
+    async def test_copy_content_with_password(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/copy",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.copy_content("c1", "folder1", password="sha256hash")
+            assert result == {}
+
 
 class TestGofileMoveContent:
     @pytest.mark.asyncio
@@ -347,6 +363,16 @@ class TestGofileImportContent:
             result = await g.import_content("c1,c2")
             assert result == {}
 
+    @pytest.mark.asyncio
+    async def test_import_content_with_password(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/import",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.import_content("c1", password="sha256hash")
+            assert result == {}
+
 
 class TestGofileDirectLinks:
     @pytest.mark.asyncio
@@ -366,6 +392,22 @@ class TestGofileDirectLinks:
         )
         async with Gofile(token="test-token") as g:
             result = await g.create_direct_link("content123", expireTime=1704067200)
+            assert result["directLinkId"] == "link1"
+
+    @pytest.mark.asyncio
+    async def test_create_direct_link_with_domains_blocked(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/content123/directlinks",
+            payload={
+                "status": "ok",
+                "data": {"directLinkId": "link1"},
+            },
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.create_direct_link(
+                "content123",
+                domainsBlocked=["evil.com", "bad.org"],
+            )
             assert result["directLinkId"] == "link1"
 
     @pytest.mark.asyncio
@@ -389,6 +431,19 @@ class TestGofileDirectLinks:
             assert result == {}
 
     @pytest.mark.asyncio
+    async def test_update_direct_link_with_domains_blocked(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/content123/directlinks/link1",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="test-token") as g:
+            result = await g.update_direct_link(
+                "content123", "link1",
+                domainsBlocked=["evil.com"],
+            )
+            assert result == {}
+
+    @pytest.mark.asyncio
     async def test_delete_direct_link_no_token(self):
         async with Gofile() as g:
             with pytest.raises(InvalidToken):
@@ -403,6 +458,28 @@ class TestGofileDirectLinks:
         async with Gofile(token="test-token") as g:
             result = await g.delete_direct_link("content123", "link1")
             assert result == {}
+
+    def test_build_direct_link_payload_domains_blocked(self):
+        payload = Gofile._build_direct_link_payload(
+            domainsBlocked=["evil.com", "bad.org"],
+        )
+        assert payload == {"domainsBlocked": ["evil.com", "bad.org"]}
+
+    def test_build_direct_link_payload_all_params(self):
+        payload = Gofile._build_direct_link_payload(
+            expireTime=1704067200,
+            sourceIpsAllowed=["1.2.3.4"],
+            domainsAllowed=["good.com"],
+            domainsBlocked=["evil.com"],
+            auth=["user:pass"],
+        )
+        assert payload == {
+            "expireTime": 1704067200,
+            "sourceIpsAllowed": ["1.2.3.4"],
+            "domainsAllowed": ["good.com"],
+            "domainsBlocked": ["evil.com"],
+            "auth": ["user:pass"],
+        }
 
 
 class TestGofileAccount:
