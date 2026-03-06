@@ -109,15 +109,15 @@ class Gofile:
         else:
             url = "https://upload.gofile.io/uploadfile"
 
-        data = FormData()
         fh = open(file, "rb")
-        data.add_field(
-            "file", fh, filename=os.path.basename(file)
-        )
-        if folderId:
-            data.add_field("folderId", folderId)
-
         try:
+            data = FormData()
+            data.add_field(
+                "file", fh, filename=os.path.basename(file)
+            )
+            if folderId:
+                data.add_field("folderId", folderId)
+
             return await self._api_request(
                 "POST", url, data=data, need_token=False
             )
