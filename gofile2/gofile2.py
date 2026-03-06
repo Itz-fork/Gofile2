@@ -58,6 +58,7 @@ class Gofile:
         data: Optional[FormData] = None,
         params: Optional[dict] = None,
         need_token: bool = True,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Make an API request to the Gofile server.
@@ -69,17 +70,20 @@ class Gofile:
             data: Form data for the request (used for file uploads).
             params: Query parameters for the request.
             need_token: Whether a token is required for this request.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             The 'data' field from the API response.
         """
-        if need_token and self.token is None:
+        auth_token = token or self.token
+
+        if need_token and auth_token is None:
             raise InvalidToken()
 
         session = await self._get_session()
         headers: Dict[str, str] = {}
-        if self.token:
-            headers["Authorization"] = f"Bearer {self.token}"
+        if auth_token:
+            headers["Authorization"] = f"Bearer {auth_token}"
 
         async with session.request(
             method, url, json=json, data=data, params=params, headers=headers
@@ -99,6 +103,7 @@ class Gofile:
         file: str,
         folderId: Optional[str] = None,
         server: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Upload a file to Gofile storage.
@@ -108,6 +113,7 @@ class Gofile:
             folderId: Destination folder ID. If omitted, a new folder is created.
             server: Regional upload server (e.g. 'upload-eu-par' for Paris).
                     Defaults to automatic server selection via 'upload'.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Upload result containing file info, parentFolder, and (for guest
@@ -133,7 +139,7 @@ class Gofile:
                 data.add_field("folderId", folderId)
 
             return await self._api_request(
-                "POST", url, data=data, need_token=False
+                "POST", url, data=data, need_token=False, token=token
             )
         finally:
             fh.close()
@@ -144,6 +150,7 @@ class Gofile:
         folderId: Optional[str] = None,
         delay: int = 3,
         server: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Upload all files in a folder to Gofile storage.
@@ -154,6 +161,7 @@ class Gofile:
                       from the first upload's response.
             delay: Time interval between file uploads in seconds (to avoid rate limits).
             server: Regional upload server.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             List of upload results for each file.
@@ -173,7 +181,7 @@ class Gofile:
         uploaded: List[Dict[str, Any]] = []
         for i, file_path in enumerate(files):
             result = await self.upload(
-                file_path, folderId=folderId, server=server
+                file_path, folderId=folderId, server=server, token=token
             )
             uploaded.append(result)
             if folderId is None:
@@ -188,6 +196,7 @@ class Gofile:
         parentFolderId: str,
         folderName: Optional[str] = None,
         public: Optional[bool] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create a new folder.
@@ -196,6 +205,7 @@ class Gofile:
             parentFolderId: The parent folder ID.
             folderName: Custom folder name. If omitted, a unique name is generated.
             public: Whether the folder should be publicly accessible.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Folder creation result.
@@ -208,13 +218,14 @@ class Gofile:
             payload["folderName"] = folderName
         if public is not None:
             payload["public"] = public
-        return await self._api_request("POST", url, json=payload)
+        return await self._api_request("POST", url, json=payload, token=token)
 
     async def update_content(
         self,
         contentId: str,
         attribute: str,
         attributeValue: Any,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Update an attribute of a file or folder.
@@ -224,6 +235,7 @@ class Gofile:
             attribute: Attribute to update. One of: 'name', 'description',
                        'tags', 'public', 'expiry', 'password'.
             attributeValue: New value for the attribute.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Update result.
@@ -244,26 +256,28 @@ class Gofile:
             "attribute": attribute,
             "attributeValue": attributeValue,
         }
-        return await self._api_request("PUT", url, json=payload)
+        return await self._api_request("PUT", url, json=payload, token=token)
 
-    async def delete_content(self, contentId: str) -> Dict[str, Any]:
+    async def delete_content(self, contentId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Delete files or folders.
 
         Args:
             contentId: Comma-separated list of content IDs to delete.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Deletion result.
         """
         url = f"{self.api_url}/contents"
         payload = {"contentsId": contentId}
-        return await self._api_request("DELETE", url, json=payload)
+        return await self._api_request("DELETE", url, json=payload, token=token)
 
     async def get_content(
         self,
         contentId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get information about a folder and its contents.
@@ -271,6 +285,7 @@ class Gofile:
         Args:
             contentId: The content ID (must be a folder ID).
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Content information including metadata and file listings.
@@ -279,12 +294,13 @@ class Gofile:
         params: Optional[Dict[str, str]] = None
         if password is not None:
             params = {"password": password}
-        return await self._api_request("GET", url, params=params)
+        return await self._api_request("GET", url, params=params, token=token)
 
     async def search_content(
         self,
         contentId: str,
         searchedString: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Search for files and folders within a specific parent folder.
@@ -292,19 +308,21 @@ class Gofile:
         Args:
             contentId: The folder ID to search within.
             searchedString: Search string to match against content names or tags.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Search results.
         """
         url = f"{self.api_url}/contents/search"
         params = {"contentId": contentId, "searchedString": searchedString}
-        return await self._api_request("GET", url, params=params)
+        return await self._api_request("GET", url, params=params, token=token)
 
     async def copy_content(
         self,
         contentsId: str,
         folderId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Copy files or folders to a destination folder.
@@ -313,6 +331,7 @@ class Gofile:
             contentsId: Comma-separated list of content IDs to copy.
             folderId: Destination folder ID.
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Copy result.
@@ -321,12 +340,13 @@ class Gofile:
         payload: Dict[str, str] = {"contentsId": contentsId, "folderId": folderId}
         if password is not None:
             payload["password"] = password
-        return await self._api_request("POST", url, json=payload)
+        return await self._api_request("POST", url, json=payload, token=token)
 
     async def move_content(
         self,
         contentsId: str,
         folderId: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Move files or folders to a destination folder.
@@ -334,18 +354,20 @@ class Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to move.
             folderId: Destination folder ID.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Move result.
         """
         url = f"{self.api_url}/contents/move"
         payload = {"contentsId": contentsId, "folderId": folderId}
-        return await self._api_request("PUT", url, json=payload)
+        return await self._api_request("PUT", url, json=payload, token=token)
 
     async def import_content(
         self,
         contentsId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Import public content into your account's root folder.
@@ -353,6 +375,7 @@ class Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to import.
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Import result.
@@ -361,7 +384,7 @@ class Gofile:
         payload: Dict[str, str] = {"contentsId": contentsId}
         if password is not None:
             payload["password"] = password
-        return await self._api_request("POST", url, json=payload)
+        return await self._api_request("POST", url, json=payload, token=token)
 
     # --- Direct Links ---
 
@@ -394,6 +417,7 @@ class Gofile:
         domainsAllowed: Optional[List[str]] = None,
         domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create a direct access link to content.
@@ -405,6 +429,7 @@ class Gofile:
             domainsAllowed: List of domains allowed to access the link.
             domainsBlocked: List of domains blocked from accessing the link.
             auth: List of "user:password" combinations for basic authentication.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link creation result.
@@ -413,7 +438,7 @@ class Gofile:
         payload = self._build_direct_link_payload(
             expireTime, sourceIpsAllowed, domainsAllowed, domainsBlocked, auth
         )
-        return await self._api_request("POST", url, json=payload)
+        return await self._api_request("POST", url, json=payload, token=token)
 
     async def update_direct_link(
         self,
@@ -424,6 +449,7 @@ class Gofile:
         domainsAllowed: Optional[List[str]] = None,
         domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Update a direct link's configuration.
@@ -436,6 +462,7 @@ class Gofile:
             domainsAllowed: Updated list of allowed domains.
             domainsBlocked: Updated list of blocked domains.
             auth: Updated list of "user:password" combinations.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link update result.
@@ -444,12 +471,13 @@ class Gofile:
         payload = self._build_direct_link_payload(
             expireTime, sourceIpsAllowed, domainsAllowed, domainsBlocked, auth
         )
-        return await self._api_request("PUT", url, json=payload)
+        return await self._api_request("PUT", url, json=payload, token=token)
 
     async def delete_direct_link(
         self,
         contentId: str,
         directLinkId: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Delete a direct link.
@@ -457,50 +485,56 @@ class Gofile:
         Args:
             contentId: The content ID.
             directLinkId: The direct link ID to delete.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link deletion result.
         """
         url = f"{self.api_url}/contents/{contentId}/directlinks/{directLinkId}"
-        return await self._api_request("DELETE", url)
+        return await self._api_request("DELETE", url, token=token)
 
     # --- Account ---
 
-    async def get_account_id(self) -> Dict[str, Any]:
+    async def get_account_id(self, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Get the account ID associated with the current API token.
+
+        Args:
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Account ID information.
         """
         url = f"{self.api_url}/accounts/getid"
-        return await self._api_request("GET", url)
+        return await self._api_request("GET", url, token=token)
 
-    async def get_account(self, accountId: str) -> Dict[str, Any]:
+    async def get_account(self, accountId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Get detailed information about a specific account.
 
         Args:
             accountId: The account ID to retrieve information for.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Account information.
         """
         url = f"{self.api_url}/accounts/{accountId}"
-        return await self._api_request("GET", url)
+        return await self._api_request("GET", url, token=token)
 
-    async def reset_token(self, accountId: str) -> Dict[str, Any]:
+    async def reset_token(self, accountId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Reset the API token for an account. A new token will be sent via email.
 
         Args:
             accountId: The account ID.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Token reset result.
         """
         url = f"{self.api_url}/accounts/{accountId}/resettoken"
-        return await self._api_request("POST", url)
+        return await self._api_request("POST", url, token=token)
 
     async def done(self) -> None:
         """Close the HTTP session."""
