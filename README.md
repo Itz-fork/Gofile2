@@ -75,15 +75,60 @@ async with Gofile(token="your_token") as g:
 
     # Delete file or folder
     await g.delete_content(contentId="id_of_the_file_or_folder")
+
+    # Get content information
+    await g.get_content(contentId="folder_id")
+
+    # Search for content within a folder
+    await g.search_content(contentId="folder_id", searchedString="my_file")
+
+    # Copy content to another folder
+    await g.copy_content(contentsId="content_id", folderId="destination_folder_id")
+
+    # Move content to another folder
+    await g.move_content(contentsId="content_id", folderId="destination_folder_id")
+
+    # Import public content into your account
+    await g.import_content(contentsId="content_id")
+
+    # Create a direct link
+    await g.create_direct_link(contentId="content_id", expireTime=1735689600)
+
+    # Update a direct link
+    await g.update_direct_link(contentId="content_id", directLinkId="link_id", expireTime=1735689600)
+
+    # Delete a direct link
+    await g.delete_direct_link(contentId="content_id", directLinkId="link_id")
+
+    # Get account ID
+    await g.get_account_id()
+
+    # Get account information
+    await g.get_account(accountId="account_id")
+
+    # Reset API token (new token will be sent via email)
+    await g.reset_token(accountId="account_id")
 ```
 
 **Synchronous version with context manager**
 ```python
 with Sync_Gofile(token="your_token") as g:
     g.upload(file="path_to_your_file")
+    g.upload_folder(path="path_to_your_folder")
     g.create_folder(parentFolderId="root_folder_id", folderName="My Folder")
     g.update_content(contentId="content_id", attribute="name", attributeValue="new_name.txt")
     g.delete_content(contentId="content_id")
+    g.get_content(contentId="folder_id")
+    g.search_content(contentId="folder_id", searchedString="my_file")
+    g.copy_content(contentsId="content_id", folderId="destination_folder_id")
+    g.move_content(contentsId="content_id", folderId="destination_folder_id")
+    g.import_content(contentsId="content_id")
+    g.create_direct_link(contentId="content_id", expireTime=1735689600)
+    g.update_direct_link(contentId="content_id", directLinkId="link_id", expireTime=1735689600)
+    g.delete_direct_link(contentId="content_id", directLinkId="link_id")
+    g.get_account_id()
+    g.get_account(accountId="account_id")
+    g.reset_token(accountId="account_id")
 ```
 
 **Manual session management**
