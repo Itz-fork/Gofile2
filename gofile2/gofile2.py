@@ -90,7 +90,10 @@ class Gofile:
         ) as resp:
             if resp.status == 429:
                 raise RateLimitError()
-            result = await resp.json(content_type=None)
+            try:
+                result = await resp.json(content_type=None)
+            except Exception as e:
+                raise ResponseError("Invalid API response") from e
 
         status = result.get("status")
         if status == "ok":
