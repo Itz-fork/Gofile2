@@ -50,6 +50,7 @@ class Sync_Gofile:
         file: str,
         folderId: Optional[str] = None,
         server: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Upload a file to Gofile storage.
@@ -58,11 +59,12 @@ class Sync_Gofile:
             file: Path to the file to upload.
             folderId: Destination folder ID.
             server: Regional upload server.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Upload result dict.
         """
-        return self._run(self._async_client.upload(file, folderId, server))
+        return self._run(self._async_client.upload(file, folderId, server, token=token))
 
     def upload_folder(
         self,
@@ -70,6 +72,7 @@ class Sync_Gofile:
         folderId: Optional[str] = None,
         delay: int = 3,
         server: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Upload all files in a folder to Gofile storage.
@@ -79,12 +82,13 @@ class Sync_Gofile:
             folderId: Destination folder ID.
             delay: Time interval between file uploads in seconds.
             server: Regional upload server.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             List of upload results for each file.
         """
         return self._run(
-            self._async_client.upload_folder(path, folderId, delay, server)
+            self._async_client.upload_folder(path, folderId, delay, server, token=token)
         )
 
     def create_folder(
@@ -92,6 +96,7 @@ class Sync_Gofile:
         parentFolderId: str,
         folderName: Optional[str] = None,
         public: Optional[bool] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create a new folder.
@@ -100,12 +105,13 @@ class Sync_Gofile:
             parentFolderId: The parent folder ID.
             folderName: Custom folder name.
             public: Whether the folder should be publicly accessible.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Folder creation result.
         """
         return self._run(
-            self._async_client.create_folder(parentFolderId, folderName, public)
+            self._async_client.create_folder(parentFolderId, folderName, public, token=token)
         )
 
     def update_content(
@@ -113,6 +119,7 @@ class Sync_Gofile:
         contentId: str,
         attribute: str,
         attributeValue: Any,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Update an attribute of a file or folder.
@@ -121,32 +128,35 @@ class Sync_Gofile:
             contentId: The content ID.
             attribute: Attribute to update.
             attributeValue: New value for the attribute.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Update result.
         """
         return self._run(
             self._async_client.update_content(
-                contentId, attribute, attributeValue
+                contentId, attribute, attributeValue, token=token
             )
         )
 
-    def delete_content(self, contentId: str) -> Dict[str, Any]:
+    def delete_content(self, contentId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Delete files or folders.
 
         Args:
             contentId: Comma-separated list of content IDs to delete.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Deletion result.
         """
-        return self._run(self._async_client.delete_content(contentId))
+        return self._run(self._async_client.delete_content(contentId, token=token))
 
     def get_content(
         self,
         contentId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get information about a folder and its contents.
@@ -154,16 +164,18 @@ class Sync_Gofile:
         Args:
             contentId: The content ID (must be a folder ID).
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Content information.
         """
-        return self._run(self._async_client.get_content(contentId, password))
+        return self._run(self._async_client.get_content(contentId, password, token=token))
 
     def search_content(
         self,
         contentId: str,
         searchedString: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Search for files and folders within a specific parent folder.
@@ -171,12 +183,13 @@ class Sync_Gofile:
         Args:
             contentId: The folder ID to search within.
             searchedString: Search string to match against content names or tags.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Search results.
         """
         return self._run(
-            self._async_client.search_content(contentId, searchedString)
+            self._async_client.search_content(contentId, searchedString, token=token)
         )
 
     def copy_content(
@@ -184,6 +197,7 @@ class Sync_Gofile:
         contentsId: str,
         folderId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Copy files or folders to a destination folder.
@@ -192,18 +206,20 @@ class Sync_Gofile:
             contentsId: Comma-separated list of content IDs to copy.
             folderId: Destination folder ID.
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Copy result.
         """
         return self._run(
-            self._async_client.copy_content(contentsId, folderId, password)
+            self._async_client.copy_content(contentsId, folderId, password, token=token)
         )
 
     def move_content(
         self,
         contentsId: str,
         folderId: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Move files or folders to a destination folder.
@@ -211,18 +227,20 @@ class Sync_Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to move.
             folderId: Destination folder ID.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Move result.
         """
         return self._run(
-            self._async_client.move_content(contentsId, folderId)
+            self._async_client.move_content(contentsId, folderId, token=token)
         )
 
     def import_content(
         self,
         contentsId: str,
         password: Optional[str] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Import public content into your account's root folder.
@@ -230,11 +248,12 @@ class Sync_Gofile:
         Args:
             contentsId: Comma-separated list of content IDs to import.
             password: SHA-256 hash of the password for password-protected content.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Import result.
         """
-        return self._run(self._async_client.import_content(contentsId, password))
+        return self._run(self._async_client.import_content(contentsId, password, token=token))
 
     def create_direct_link(
         self,
@@ -244,6 +263,7 @@ class Sync_Gofile:
         domainsAllowed: Optional[List[str]] = None,
         domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Create a direct access link to content.
@@ -255,6 +275,7 @@ class Sync_Gofile:
             domainsAllowed: List of domains allowed to access the link.
             domainsBlocked: List of domains blocked from accessing the link.
             auth: List of "user:password" combinations for basic authentication.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link creation result.
@@ -262,7 +283,7 @@ class Sync_Gofile:
         return self._run(
             self._async_client.create_direct_link(
                 contentId, expireTime, sourceIpsAllowed, domainsAllowed,
-                domainsBlocked, auth
+                domainsBlocked, auth, token=token
             )
         )
 
@@ -275,6 +296,7 @@ class Sync_Gofile:
         domainsAllowed: Optional[List[str]] = None,
         domainsBlocked: Optional[List[str]] = None,
         auth: Optional[List[str]] = None,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Update a direct link's configuration.
@@ -287,6 +309,7 @@ class Sync_Gofile:
             domainsAllowed: Updated list of allowed domains.
             domainsBlocked: Updated list of blocked domains.
             auth: Updated list of "user:password" combinations.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link update result.
@@ -294,7 +317,7 @@ class Sync_Gofile:
         return self._run(
             self._async_client.update_direct_link(
                 contentId, directLinkId, expireTime, sourceIpsAllowed,
-                domainsAllowed, domainsBlocked, auth
+                domainsAllowed, domainsBlocked, auth, token=token
             )
         )
 
@@ -302,6 +325,7 @@ class Sync_Gofile:
         self,
         contentId: str,
         directLinkId: str,
+        token: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Delete a direct link.
@@ -309,46 +333,52 @@ class Sync_Gofile:
         Args:
             contentId: The content ID.
             directLinkId: The direct link ID to delete.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Direct link deletion result.
         """
         return self._run(
-            self._async_client.delete_direct_link(contentId, directLinkId)
+            self._async_client.delete_direct_link(contentId, directLinkId, token=token)
         )
 
-    def get_account_id(self) -> Dict[str, Any]:
+    def get_account_id(self, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Get the account ID associated with the current API token.
+
+        Args:
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Account ID information.
         """
-        return self._run(self._async_client.get_account_id())
+        return self._run(self._async_client.get_account_id(token=token))
 
-    def get_account(self, accountId: str) -> Dict[str, Any]:
+    def get_account(self, accountId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Get detailed information about a specific account.
 
         Args:
             accountId: The account ID.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Account information.
         """
-        return self._run(self._async_client.get_account(accountId))
+        return self._run(self._async_client.get_account(accountId, token=token))
 
-    def reset_token(self, accountId: str) -> Dict[str, Any]:
+    def reset_token(self, accountId: str, token: Optional[str] = None) -> Dict[str, Any]:
         """
         Reset the API token for an account.
 
         Args:
             accountId: The account ID.
+            token: Optional per-request token. Overrides the instance token.
 
         Returns:
             Token reset result.
         """
-        return self._run(self._async_client.reset_token(accountId))
+        return self._run(self._async_client.reset_token(accountId, token=token))
 
     def done(self) -> None:
         """Close the HTTP session and event loop."""

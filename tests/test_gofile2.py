@@ -561,6 +561,213 @@ class TestGofileAuth:
             # The auth header is set in the code; we verify by successful response
 
 
+class TestGofilePerMethodToken:
+    """Test that methods accept an optional per-call token parameter."""
+
+    @pytest.mark.asyncio
+    async def test_create_folder_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/createFolder",
+            payload={"status": "ok", "data": {"folderId": "new-folder"}},
+        )
+        async with Gofile() as g:
+            result = await g.create_folder("parent-id", token="per-call-token")
+            assert result["folderId"] == "new-folder"
+
+    @pytest.mark.asyncio
+    async def test_per_method_token_overrides_instance_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/createFolder",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile(token="instance-token") as g:
+            # Should succeed using per-call token (overrides instance)
+            await g.create_folder("parent-id", token="override-token")
+
+    @pytest.mark.asyncio
+    async def test_get_content_with_per_method_token(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/contents/folder123",
+            payload={
+                "status": "ok",
+                "data": {"id": "folder123", "type": "folder"},
+            },
+        )
+        async with Gofile() as g:
+            result = await g.get_content("folder123", token="per-call-token")
+            assert result["id"] == "folder123"
+
+    @pytest.mark.asyncio
+    async def test_delete_content_with_per_method_token(self, mock_aio):
+        mock_aio.delete(
+            "https://api.gofile.io/contents",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.delete_content("c1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_update_content_with_per_method_token(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/c1/update",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.update_content("c1", "name", "new_name", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_search_content_with_per_method_token(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/contents/search?contentId=f1&searchedString=test",
+            payload={"status": "ok", "data": {"contents": []}},
+        )
+        async with Gofile() as g:
+            result = await g.search_content("f1", "test", token="per-call-token")
+            assert result["contents"] == []
+
+    @pytest.mark.asyncio
+    async def test_copy_content_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/copy",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.copy_content("c1", "folder1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_move_content_with_per_method_token(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/move",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.move_content("c1", "folder1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_import_content_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/import",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.import_content("c1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_create_direct_link_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/c1/directlinks",
+            payload={"status": "ok", "data": {"directLinkId": "link1"}},
+        )
+        async with Gofile() as g:
+            result = await g.create_direct_link("c1", token="per-call-token")
+            assert result["directLinkId"] == "link1"
+
+    @pytest.mark.asyncio
+    async def test_update_direct_link_with_per_method_token(self, mock_aio):
+        mock_aio.put(
+            "https://api.gofile.io/contents/c1/directlinks/link1",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.update_direct_link("c1", "link1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_delete_direct_link_with_per_method_token(self, mock_aio):
+        mock_aio.delete(
+            "https://api.gofile.io/contents/c1/directlinks/link1",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.delete_direct_link("c1", "link1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_get_account_id_with_per_method_token(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/accounts/getid",
+            payload={"status": "ok", "data": {"id": "acc1"}},
+        )
+        async with Gofile() as g:
+            result = await g.get_account_id(token="per-call-token")
+            assert result["id"] == "acc1"
+
+    @pytest.mark.asyncio
+    async def test_get_account_with_per_method_token(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/accounts/acc1",
+            payload={"status": "ok", "data": {"id": "acc1"}},
+        )
+        async with Gofile() as g:
+            result = await g.get_account("acc1", token="per-call-token")
+            assert result["id"] == "acc1"
+
+    @pytest.mark.asyncio
+    async def test_reset_token_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/accounts/acc1/resettoken",
+            payload={"status": "ok", "data": {}},
+        )
+        async with Gofile() as g:
+            result = await g.reset_token("acc1", token="per-call-token")
+            assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_no_token_at_all_raises_invalid_token(self):
+        async with Gofile() as g:
+            with pytest.raises(InvalidToken):
+                await g.create_folder("parent-id")
+
+    @pytest.mark.asyncio
+    async def test_upload_with_per_method_token(self, mock_aio, tmp_file):
+        mock_aio.post(
+            "https://upload.gofile.io/uploadfile",
+            payload={
+                "status": "ok",
+                "data": {"fileId": "f1", "parentFolder": "folder1"},
+            },
+        )
+        async with Gofile() as g:
+            result = await g.upload(tmp_file, token="per-call-token")
+            assert result["fileId"] == "f1"
+
+
+class TestSyncGofilePerMethodToken:
+    """Test that sync wrapper also accepts per-call token parameter."""
+
+    def test_sync_create_folder_with_per_method_token(self, mock_aio):
+        mock_aio.post(
+            "https://api.gofile.io/contents/createFolder",
+            payload={"status": "ok", "data": {"folderId": "new-folder"}},
+        )
+        with Sync_Gofile() as g:
+            result = g.create_folder("parent-id", token="per-call-token")
+            assert result["folderId"] == "new-folder"
+
+    def test_sync_get_account_id_with_per_method_token(self, mock_aio):
+        mock_aio.get(
+            "https://api.gofile.io/accounts/getid",
+            payload={"status": "ok", "data": {"id": "acc1"}},
+        )
+        with Sync_Gofile() as g:
+            result = g.get_account_id(token="per-call-token")
+            assert result["id"] == "acc1"
+
+    def test_sync_delete_content_with_per_method_token(self, mock_aio):
+        mock_aio.delete(
+            "https://api.gofile.io/contents",
+            payload={"status": "ok", "data": {}},
+        )
+        with Sync_Gofile() as g:
+            result = g.delete_content("c1", token="per-call-token")
+            assert result == {}
+
+
 # --- Sync Tests ---
 
 class TestSyncGofile:
