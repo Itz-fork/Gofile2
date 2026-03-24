@@ -14,6 +14,10 @@ async with Gofile() as g:
 >
 Current version is compatible with `2025-05-16`
 
+
+> [!NOTE]
+> **Premium Requirement:** Most API endpoints require a premium account. Only basic operations like uploading, creating folders, renaming content, and removing content are accessible with free accounts.
+
 # Installation
 Install via pypi
 [![Downloads](https://static.pepy.tech/badge/gofile2)](https://pypi.org/project/gofile2/)
