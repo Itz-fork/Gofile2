@@ -3,7 +3,7 @@
 from gofile2 import Gofile
 
 async with Gofile() as g:
-    await g.upload("/home/itz-fork/photo.png")
+    await g.upload("/home/partiallywritten/photo.png")
 ```
 ***An API Wrapper for Gofile API.***
 
@@ -25,13 +25,13 @@ Install via pypi
 pip3 install gofile2
 ```
 
-To install development version [Gofile2](https://github.com/Itz-fork/Gofile2), run the following command
+To install development version [Gofile2](https://github.com/partiallywritten/Gofile2), run the following command
 ```python
-pip install git+https://github.com/Itz-fork/Gofile2.git
+pip install git+https://github.com/partiallywritten/Gofile2.git
 ```
 
 # Usage
-**1. Import [Gofile2](https://github.com/Itz-fork/Gofile2) in your python file**
+**1. Import [Gofile2](https://github.com/partiallywritten/Gofile2) in your python file**
 
 **Asynchronous version**
 ```python
@@ -327,4 +327,4 @@ with Sync_Gofile() as g:
 
 ## Contact
 You can find me on;
-[Telegram](https://t.me/Bruh_0x), [Bluesky](https://bsky.app/profile/hiruu-sh.bsky.social), [Discord](http://discord.com/users/1182562178155413594)
+[Telegram](https://t.me/Bruh_0x), [Bluesky](https://bsky.app/profile/partiallywritten.bsky.social), [Discord](http://discord.com/users/1182562178155413594)
